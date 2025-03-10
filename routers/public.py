@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from models.user import NewUser, User
 from models.instrument import Instrument
 from models.orderbook import L2OrderBook
+from models.transaction import Transaction
 
 router_public = APIRouter()
 
@@ -30,4 +31,21 @@ def get_orderbook(ticker: str, qty: int = 10) -> L2OrderBook:
     bid_levels = [{"price": 1, "qty": 1}, {"price": 2, "qty": 2}]
     ask_levels = [{"price": 3, "qty": 3}, {"price": 4, "qty": 4}]
     result = L2OrderBook(bid_levels=bid_levels, ask_levels=ask_levels)
+    return result
+
+
+@router_public.get(
+    "/api/v1/public/transactions/{ticker}", summary="Get Transaction History"
+)
+def get_transaction_history(ticker: str, limit: int = 10) -> list[Transaction]:
+    # получаем до limit транзакций по нужному ticker
+    result = []
+    result.append(
+        Transaction(
+            ticker=ticker,
+            amount=1,
+            price=2,
+            timestamp="2025-03-10T08:51:47.755Z",
+        )
+    )
     return result
