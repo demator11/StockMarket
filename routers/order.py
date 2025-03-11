@@ -2,6 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Header
 from uuid import UUID
 from models.order import LimitOrderBody, LimitOrder, CreateOrderResponse
+from models.ok import Ok
 
 router_order = APIRouter()
 
@@ -30,3 +31,11 @@ def get_order_by_id(
 ) -> LimitOrder:
     # получаем нужный order
     return LimitOrder()
+
+
+@router_order.delete("/api/v1/order/{order_id}", summary="Cancel Order")
+def cancel_order_by_id(
+    order_id: UUID, api_key: Annotated[str | None, Header()] = None
+) -> Ok:
+    # отменяем ордер
+    return Ok()
