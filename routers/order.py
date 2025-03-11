@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Header
-
+from uuid import UUID
 from models.order import LimitOrderBody, LimitOrder, CreateOrderResponse
 
 router_order = APIRouter()
@@ -22,3 +22,11 @@ def get_orders_list(
     # получаем список order
     res = []
     return res
+
+
+@router_order.get("/api/v1/order/{order_id}", summary="Get Order")
+def get_order_by_id(
+    order_id: UUID, api_key: Annotated[str | None, Header()] = None
+) -> LimitOrder:
+    # получаем нужный order
+    return LimitOrder()
