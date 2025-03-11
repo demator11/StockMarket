@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from enum import Enum
+from uuid import UUID
 
 
 class UserRole(Enum):
@@ -12,7 +13,7 @@ class NewUser(BaseModel):
 
 
 class User(BaseModel):
-    id: str
+    id: UUID
     name: str
     role: UserRole = UserRole.user
     api_key: str
