@@ -1,19 +1,25 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from models.user import NewUser, User
 from models.instrument import Instrument
 from models.orderbook import L2OrderBook
 from models.transaction import Transaction
+from database.orm import AsyncORM
+from create_token import create_access_token
 
 router_public = APIRouter()
 
 
 @router_public.post("/api/v1/public/register", summary="Register")
-def register_new_user(new_user: NewUser) -> User:
-    # добавляем юзера в дб, генерируем id и api_key
-    id = "abc"
-    api_key = "abc123"
-    return User(id=id, name=new_user.name, api_key=api_key)
+async def register_new_user(new_user: NewUser) -> User:
+    check = await AsyncORM.check_has_in_database(new_user.name)
+    if check:
+        raise HTTPException(
+            status_code=409, detail="Пользователь уже существует"
+        )
+    api_key = create_access_token({"sub": new_user.name})
+    result = await AsyncORM.create_user(new_user, api_key)
+    return result
 
 
 @router_public.get("/api/v1/public/instrument", summary="List instruments")
