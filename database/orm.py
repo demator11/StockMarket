@@ -1,5 +1,7 @@
 from database.engine import async_engine, Base
-from database.model import UserOrm
+from database.database_models.user import UserOrm
+from database.database_models.order import OrdersOrm
+from database.database_models.balance import BalanceOrm
 
 
 class AsyncORM:
