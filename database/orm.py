@@ -25,8 +25,8 @@ class AsyncORM:
             await conn.run_sync(Base.metadata.create_all)
 
     @staticmethod
-    async def create_user(new_user: NewUser, api_key: str):
-        async with async_session_factory() as session:
+    async def create_user(new_user: NewUser, api_key: str) -> User:
+        async with async_session_factory.begin() as session:
             result = await session.scalars(
                 insert(UserOrm)
                 .values(
