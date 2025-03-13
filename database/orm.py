@@ -4,7 +4,7 @@ from sqlalchemy import select, insert
 
 from database.engine import async_engine, Base, async_session_factory
 from database.database_models.user import UserOrm
-from database.database_models.order import OrdersOrm
+from database.database_models.order import OrderOrm
 from database.database_models.balance import BalanceOrm
 from models.user import User, NewUser, UserRole
 

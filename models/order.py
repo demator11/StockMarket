@@ -1,6 +1,7 @@
 from enum import Enum
-from pydantic import BaseModel, Field
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class Direction(Enum):

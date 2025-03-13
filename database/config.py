@@ -1,10 +1,11 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-def DATABASE_URL_asyncpg(
+def database_url_asyncpg(
     db_host: str, db_port: str, db_user: str, db_pass: str, db_name: str
 ) -> str:
     return (
@@ -21,10 +22,12 @@ POSTGRESQL_PASS = os.getenv("DB_PASS")
 POSTGRESQL_NAME = os.getenv("DB_NAME")
 
 
-POSTGRESQL_URL = DATABASE_URL_asyncpg(
-    POSTGRESQL_HOST,
-    POSTGRESQL_PORT,
-    POSTGRESQL_USER,
-    POSTGRESQL_PASS,
-    POSTGRESQL_NAME,
+POSTGRESQL_URL = database_url_asyncpg(
+    db_host=POSTGRESQL_HOST,
+    db_port=POSTGRESQL_PORT,
+    db_user=POSTGRESQL_USER,
+    db_pass=POSTGRESQL_PASS,
+    db_name=POSTGRESQL_NAME,
 )
+
+echo = bool(os.getenv("ECHO"))

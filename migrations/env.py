@@ -1,14 +1,13 @@
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
-from alembic import context
 
 from database.config import POSTGRESQL_URL
 from database.database_models.user import UserOrm
 from database.database_models.balance import BalanceOrm
-from database.database_models.order import OrdersOrm
+from database.database_models.order import OrderOrm
 from database.engine import Base
 
 config = context.config

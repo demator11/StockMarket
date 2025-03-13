@@ -1,5 +1,6 @@
 from uuid import UUID
 from enum import StrEnum
+
 from pydantic import BaseModel, Field, ConfigDict
 
 
