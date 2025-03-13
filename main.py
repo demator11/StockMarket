@@ -20,6 +20,7 @@ if __name__ == "__main__":
 #
 #
 # async def main():
+#     await AsyncORM.drop_tables()
 #     await AsyncORM.create_tables()
 #
 #
