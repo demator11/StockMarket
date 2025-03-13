@@ -4,7 +4,8 @@ from models.user import NewUser, User
 from models.instrument import Instrument
 from models.orderbook import L2OrderBook
 from models.transaction import Transaction
-from database.orm import AsyncORM
+from database.repository.user_repository import UserRepository
+from database.repository.instrument_repository import InstrumentRepository
 from create_token import create_access_token
 
 router_public = APIRouter()
@@ -12,21 +13,20 @@ router_public = APIRouter()
 
 @router_public.post("/api/v1/public/register", summary="Register")
 async def register_new_user(new_user: NewUser) -> User:
-    check = await AsyncORM.check_has_in_database(new_user.name)
+    check = await UserRepository.check_has_in_database(new_user.name)
     if check:
         raise HTTPException(
             status_code=409, detail="Пользователь уже существует"
         )
     api_key = create_access_token({"sub": new_user.name})
-    result = await AsyncORM.create_user(new_user, api_key)
+    result = await UserRepository.create_user(new_user, api_key)
     return result
 
 
 @router_public.get("/api/v1/public/instrument", summary="List instruments")
-def get_instrument_list() -> Instrument:
-    # берем какие то там инструменты и отдаем их списком
-    instrument = Instrument(name="string", ticker="TICKER")
-    return instrument
+async def get_instrument_list() -> list[Instrument]:
+    result = await InstrumentRepository.get_instrument_list()
+    return result
 
 
 @router_public.get(
