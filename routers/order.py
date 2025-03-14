@@ -21,7 +21,7 @@ async def create_order_response(
     authorization: Annotated[str | None, Header()] = None,
 ) -> CreateOrderResponse:
     # здесь еще прикрутить авторизацию
-    id = UUID("b4c66ebe-0c51-4e8b-933f-ff28666f8fb3")
+    id = UUID("450934f2-c0ad-4fa8-aee4-6a5ce9da5ee6")
     try:
         new_order.price
     except AttributeError:
@@ -38,11 +38,11 @@ async def get_orders_list(
 
 
 @router_order.get("/api/v1/order/{order_id}", summary="Get Order")
-def get_order_by_id(
+async def get_order_by_id(
     order_id: UUID, authorization: Annotated[str | None, Header()] = None
 ) -> LimitOrder:
-    # получаем нужный order
-    return LimitOrder()
+    result = await OrderRepository.get_order_by_id(order_id)
+    return result
 
 
 @router_order.delete("/api/v1/order/{order_id}", summary="Cancel Order")

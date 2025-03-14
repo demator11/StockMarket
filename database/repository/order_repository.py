@@ -95,3 +95,32 @@ class OrderRepository:
                         )
                     )
             return order_list
+
+    @staticmethod
+    async def get_order_by_id(order_id: UUID):
+        async with async_session_factory.begin() as session:
+            order = await session.get(OrderOrm, order_id)
+            order_model = RawOrder.from_orm(order)
+            if order_model.order_type == "market":
+                return MarketOrder(
+                    id=order_model.id,
+                    status=order_model.status,
+                    user_id=order_model.user_id,
+                    body=MarketOrderBody(
+                        direction=order_model.direction,
+                        ticker=order_model.ticker,
+                        qty=order_model.qty,
+                    ),
+                )
+            return LimitOrder(
+                id=order_model.id,
+                status=order_model.status,
+                user_id=order_model.user_id,
+                body=LimitOrderBody(
+                    direction=order_model.direction,
+                    ticker=order_model.ticker,
+                    qty=order_model.qty,
+                    price=order_model.price,
+                ),
+                filled=order_model.filled,
+            )
