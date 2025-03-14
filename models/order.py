@@ -1,7 +1,10 @@
 from enum import Enum
 from uuid import UUID
+from typing import Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from models.base import ModelBase
 
 
 class Direction(Enum):
@@ -16,21 +19,51 @@ class OrderStatus(Enum):
     cancelled = "CANCELLED"
 
 
-class LimitOrderBody(BaseModel):
+class LimitOrderBody(ModelBase):
     direction: Direction
     ticker: str
-    qry: int = Field(ge=1)
+    qty: int = Field(ge=1)
     price: int = Field(gt=0)
 
 
-class LimitOrder(BaseModel):
+class LimitOrder(ModelBase):
     id: UUID
+    order_type: Literal["limit"]
     status: OrderStatus
     user_id: UUID
     body: LimitOrderBody
     filled: int = 0
 
 
-class CreateOrderResponse(BaseModel):
+class MarketOrderBody(ModelBase):
+    direction: Direction
+    ticker: str
+    qty: int = Field(ge=1)
+
+
+class MarketOrder(ModelBase):
+    id: UUID
+    order_type: Literal["market"]
+    status: OrderStatus
+    user_id: UUID
+    body: MarketOrderBody
+
+
+class RawOrder(ModelBase):
+    id: UUID
+    status: OrderStatus
+    user_id: UUID
+    direction: Direction
+    ticker: str
+    qty: int = Field(ge=1)
+    price: int = Field(gt=0)
+    filled: int = 0
+
+
+class CreateOrderResponse(ModelBase):
     success: bool = True
-    order_id: int
+    order_id: UUID
+
+
+class OrderModel(ModelBase):
+    order: Union[MarketOrder, LimitOrder] = Field(discriminator="order_type")

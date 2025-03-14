@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Header
 
+from database.repository.order_repository import OrderRepository
 from models.order import LimitOrderBody, LimitOrder, CreateOrderResponse
 from models.ok import Ok
 
@@ -10,22 +11,30 @@ router_order = APIRouter()
 
 
 @router_order.post("/api/v1/order/", summary="Create Order")
-def create_order_response(
+async def create_order_response(
     new_order: LimitOrderBody,
     authorization: Annotated[str | None, Header()] = None,
 ) -> CreateOrderResponse:
-    # создаем order и присваиваем id
-    order_id = 123
-    return CreateOrderResponse(order_id=order_id)
+    # здесь еще прикрутить авторизацию
+
+    order_type = "limit"
+    try:
+        new_order.price
+    except KeyError:
+        order_type = "market"
+    result = await OrderRepository.create_order(
+        new_order, UUID("ea32f146-7dad-4ac8-9393-d18b5d41f10e"), order_type
+    )
+
+    return result
 
 
 @router_order.get("/api/v1/order", summary="List Orders")
-def get_orders_list(
+async def get_orders_list(
     authorization: Annotated[str | None, Header()] = None,
 ) -> list[LimitOrder]:
-    # получаем список order
-    res = []
-    return res
+    result = await OrderRepository.get_order_list()
+    return result
 
 
 @router_order.get("/api/v1/order/{order_id}", summary="Get Order")
