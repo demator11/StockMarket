@@ -133,6 +133,8 @@ class OrderRepository:
             order = await session.get(OrderOrm, order_id)
             if not order:
                 return None
+            if order.status == OrderStatus.cancelled:
+                return False
             return await session.execute(
                 update(OrderOrm)
                 .where(OrderOrm.id == order_id)

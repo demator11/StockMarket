@@ -23,6 +23,7 @@ async def create_order_response(
 ) -> CreateOrderResponse:
     # здесь еще прикрутить авторизацию
     id = UUID("e9885be4-aecb-4fe9-a4d3-5dd40dee9ec9")
+    # а сюда еще проверку сущетсвует ли такой тикер
     try:
         new_order.price
     except AttributeError:
@@ -58,4 +59,6 @@ async def cancel_order_by_id(
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")
+    elif not result:
+        raise HTTPException(status_code=406, detail="Ордер уже отменён")
     return Ok()
