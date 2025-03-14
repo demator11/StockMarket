@@ -4,7 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Header
 
 from database.repository.order_repository import OrderRepository
-from models.order import LimitOrderBody, LimitOrder, CreateOrderResponse
+from models.order import (
+    LimitOrder,
+    CreateOrderResponse,
+    LimitOrderBody,
+    MarketOrderBody,
+)
 from models.ok import Ok
 
 router_order = APIRouter()
@@ -12,27 +17,22 @@ router_order = APIRouter()
 
 @router_order.post("/api/v1/order/", summary="Create Order")
 async def create_order_response(
-    new_order: LimitOrderBody,
+    new_order: LimitOrderBody | MarketOrderBody,
     authorization: Annotated[str | None, Header()] = None,
 ) -> CreateOrderResponse:
     # здесь еще прикрутить авторизацию
-
-    order_type = "limit"
+    id = UUID("b4c66ebe-0c51-4e8b-933f-ff28666f8fb3")
     try:
         new_order.price
-    except KeyError:
-        order_type = "market"
-    result = await OrderRepository.create_order(
-        new_order, UUID("ea32f146-7dad-4ac8-9393-d18b5d41f10e"), order_type
-    )
-
-    return result
+    except AttributeError:
+        return await OrderRepository.create_market_order(new_order, id)
+    return await OrderRepository.create_limit_order(new_order, id)
 
 
 @router_order.get("/api/v1/order", summary="List Orders")
 async def get_orders_list(
     authorization: Annotated[str | None, Header()] = None,
-) -> list[LimitOrder]:
+):
     result = await OrderRepository.get_order_list()
     return result
 

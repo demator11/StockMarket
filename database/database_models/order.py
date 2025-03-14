@@ -18,4 +18,5 @@ class OrderOrm(Base):
     direction: Mapped[Direction]
     ticker: Mapped[str]
     qty: Mapped[int]
-    price: Mapped[int] = mapped_column(default=None)
+    price: Mapped[int] = mapped_column(nullable=True)
+    filled: Mapped[int] = mapped_column(default=0)
