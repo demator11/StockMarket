@@ -1,10 +1,23 @@
 import os
 from dotenv import load_dotenv
 
+from fastapi import Security
+from fastapi.security.api_key import APIKeyHeader
+from pydantic import BaseModel
 from jose import jwt
 from datetime import datetime, timedelta, timezone
 
 load_dotenv()
+
+token_key = APIKeyHeader(name="Authorization")
+
+
+class Token(BaseModel):
+    token: str
+
+
+def get_current_token(auth_key: str = Security(token_key)):
+    return auth_key
 
 
 def get_auth_data():

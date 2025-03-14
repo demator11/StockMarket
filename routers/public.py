@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from models.user import NewUser, User
 from models.instrument import Instrument
@@ -12,7 +12,7 @@ router_public = APIRouter()
 
 
 @router_public.post("/api/v1/public/register", summary="Register")
-async def register_new_user(new_user: NewUser) -> User:
+async def register_new_user(new_user: NewUser, response: Response):
     check = await UserRepository.check_has_in_database(new_user.name)
     if check:
         raise HTTPException(
@@ -20,6 +20,7 @@ async def register_new_user(new_user: NewUser) -> User:
         )
     api_key = create_access_token({"sub": new_user.name})
     result = await UserRepository.create_user(new_user, api_key)
+    response.headers["Authorization"] = "TOKEN " + api_key
     return result
 
 
