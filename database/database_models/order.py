@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.engine import Base
-from models.order import Direction
+from models.order import Direction, OrderStatus
 
 
 class OrderOrm(Base):
@@ -11,7 +11,7 @@ class OrderOrm(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     order_type: Mapped[str]
-    status: Mapped[str]
+    status: Mapped[OrderStatus]
     user_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE")
     )

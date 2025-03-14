@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 
 from models.order import (
     MarketOrderBody,
@@ -10,7 +10,7 @@ from models.order import (
     MarketOrder,
     LimitOrder,
     Direction,
-    RawOrderBody,
+    OrderStatus,
 )
 from database.database_models.order import OrderOrm
 from database.engine import async_session_factory
@@ -27,7 +27,7 @@ class OrderRepository:
                 insert(OrderOrm)
                 .values(
                     order_type="limit",
-                    status="NEW",
+                    status=OrderStatus.new,
                     user_id=user_id,
                     direction=Direction(new_order.direction),
                     ticker=new_order.ticker,
@@ -100,6 +100,8 @@ class OrderRepository:
     async def get_order_by_id(order_id: UUID):
         async with async_session_factory.begin() as session:
             order = await session.get(OrderOrm, order_id)
+            if not order:
+                return None
             order_model = RawOrder.from_orm(order)
             if order_model.order_type == "market":
                 return MarketOrder(
@@ -123,4 +125,16 @@ class OrderRepository:
                     price=order_model.price,
                 ),
                 filled=order_model.filled,
+            )
+
+    @staticmethod
+    async def update_order_status(order_id: UUID, status: OrderStatus):
+        async with async_session_factory.begin() as session:
+            order = await session.get(OrderOrm, order_id)
+            if not order:
+                return None
+            return await session.execute(
+                update(OrderOrm)
+                .where(OrderOrm.id == order_id)
+                .values(status=status)
             )
