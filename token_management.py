@@ -15,12 +15,23 @@ load_dotenv()
 api_key_header = APIKeyHeader(name="Authorization")
 
 
-async def get_current_token(api_key: str = Security(api_key_header)) -> UUID:
+async def user_authorization(api_key: str = Security(api_key_header)) -> UUID:
     user_id = await UserRepository.check_user_authorization(api_key)
     if user_id is None:
         raise HTTPException(
             status_code=403, detail="Пользователь не авторизован"
         )
+    return user_id
+
+
+async def admin_authorization(api_key: str = Security(api_key_header)) -> UUID:
+    user_id = await UserRepository.check_admin_authorization(api_key)
+    if user_id is None:
+        raise HTTPException(
+            status_code=403, detail="Пользователь не авторизован"
+        )
+    elif not user_id:
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
     return user_id
 
 

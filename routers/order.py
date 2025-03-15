@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from token_management import get_current_token
+from token_management import user_authorization
 from database.repository.order_repository import OrderRepository
 from models.order import (
     LimitOrder,
@@ -10,7 +10,7 @@ from models.order import (
     MarketOrderBody,
     OrderStatus,
 )
-from models.ok import Ok
+from models.success_response import SuccessResponse
 
 router_order = APIRouter()
 
@@ -18,7 +18,7 @@ router_order = APIRouter()
 @router_order.post("/api/v1/order/", summary="Create Order")
 async def create_order_response(
     new_order: LimitOrderBody | MarketOrderBody,
-    authorization: UUID = Depends(get_current_token),
+    authorization: UUID = Depends(user_authorization),
 ):
     try:
         new_order.price
@@ -31,7 +31,7 @@ async def create_order_response(
 
 @router_order.get("/api/v1/order", summary="List Orders")
 async def get_orders_list(
-    authorization: UUID = Depends(get_current_token),
+    authorization: UUID = Depends(user_authorization),
 ):
     result = await OrderRepository.get_order_list()
     return result
@@ -39,7 +39,7 @@ async def get_orders_list(
 
 @router_order.get("/api/v1/order/{order_id}", summary="Get Order")
 async def get_order_by_id(
-    order_id: UUID, authorization: UUID = Depends(get_current_token)
+    order_id: UUID, authorization: UUID = Depends(user_authorization)
 ) -> LimitOrder:
     result = await OrderRepository.get_order_by_id(order_id)
     if result is None:
@@ -49,8 +49,8 @@ async def get_order_by_id(
 
 @router_order.delete("/api/v1/order/{order_id}", summary="Cancel Order")
 async def cancel_order_by_id(
-    order_id: UUID, authorization: UUID = Depends(get_current_token)
-) -> Ok:
+    order_id: UUID, authorization: UUID = Depends(user_authorization)
+) -> SuccessResponse:
     result = await OrderRepository.update_order_status(
         order_id=order_id, status=OrderStatus.cancelled
     )
@@ -58,4 +58,4 @@ async def cancel_order_by_id(
         raise HTTPException(status_code=404, detail="Ордер не найден")
     elif not result:
         raise HTTPException(status_code=406, detail="Ордер уже отменён")
-    return Ok()
+    return SuccessResponse()

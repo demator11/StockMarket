@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class Ok(BaseModel):
+class SuccessResponse(BaseModel):
     success: bool = True
