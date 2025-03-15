@@ -1,7 +1,6 @@
 from uuid import UUID
-from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 
 from create_token import Token, get_current_token
 from database.repository.user_repository import UserRepository

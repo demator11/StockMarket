@@ -33,6 +33,7 @@ class UserRepository:
         async with async_session_factory() as session:
             query = select(UserOrm.id).filter(UserOrm.api_key == api_key)
             result = await session.execute(query)
-            if result.first() is None:
+            result = result.first()
+            if result is None:
                 return None
-            return result.first()[0]
+            return result[0]
