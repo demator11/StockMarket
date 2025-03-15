@@ -31,3 +31,6 @@ POSTGRESQL_URL = database_url_asyncpg(
 )
 
 echo = bool(os.getenv("ECHO"))
+
+secret_key = os.getenv("SECRET_KEY")
+algorithm = os.getenv("ALGORITHM")

@@ -1,11 +1,10 @@
-import os
 from uuid import UUID
 from datetime import datetime, timedelta, timezone
 
+from database.config import secret_key, algorithm
 from dotenv import load_dotenv
 from fastapi import Security, HTTPException
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel
 from jose import jwt
 
 from database.repository.user_repository import UserRepository
@@ -37,8 +36,8 @@ async def admin_authorization(api_key: str = Security(api_key_header)) -> UUID:
 
 def get_auth_data():
     return {
-        "secret_key": os.getenv("SECRET_KEY"),
-        "algorithm": os.getenv("ALGORITHM"),
+        "secret_key": secret_key,
+        "algorithm": algorithm,
     }
 
 
