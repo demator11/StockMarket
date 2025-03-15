@@ -3,7 +3,6 @@ from sqlalchemy import select, insert
 from database.engine import async_session_factory
 from database.database_models.user import UserOrm
 from models.user import User, NewUser, UserRole
-from create_token import Token
 
 
 class UserRepository:
@@ -29,7 +28,7 @@ class UserRepository:
             return True
 
     @staticmethod
-    async def check_user_authorization(api_key: Token):
+    async def check_user_authorization(api_key: str):
         async with async_session_factory() as session:
             query = select(UserOrm.id).filter(UserOrm.api_key == api_key)
             result = await session.execute(query)

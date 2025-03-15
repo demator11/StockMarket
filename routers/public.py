@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Response
 
-from models.user import NewUser, User
+from models.user import NewUser
 from models.instrument import Instrument
 from models.orderbook import L2OrderBook
 from models.transaction import Transaction
 from database.repository.user_repository import UserRepository
 from database.repository.instrument_repository import InstrumentRepository
-from create_token import create_access_token
+from token_management import create_access_token
 
 router_public = APIRouter()
 
