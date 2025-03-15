@@ -6,8 +6,8 @@ repos:
     hooks:
       - id: black
         name: black
-        entry: venv/Scripts/black.exe -l 79 -t py312 .
-        language: script
+        entry: black -l 79 -t py312 .
+        language: system
         types: [ python ]
         pass_filenames: false
       - id: flake8

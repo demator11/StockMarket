@@ -24,3 +24,10 @@ class AsyncORM:
                 lambda connection: command.upgrade(alembic_config, "head")
             )
             await conn.run_sync(Base.metadata.create_all)
+
+    @staticmethod
+    def migration():
+        alembic_config = Config("alembic.ini")
+        command.upgrade(alembic_config, "head")
+        yield
+        command.downgrade(alembic_config, "base")
