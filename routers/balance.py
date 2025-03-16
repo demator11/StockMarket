@@ -9,16 +9,16 @@ from token_management import user_authorization
 from database.repository.balance_repository import BalanceRepository
 from database.repository.user_repository import UserRepository
 
-router_balance = APIRouter()
+balance_router = APIRouter()
 
 
-@router_balance.get("/api/v1/balance/", summary="Get Balance")
+@balance_router.get("/api/v1/balance/", summary="Get Balance")
 async def get_balance(authorization: UUID = Depends(user_authorization)):
     result = await BalanceRepository.get_user_balance(authorization)
     return result
 
 
-@router_balance.post("/api/v1/balance/deposit", summary="Deposit")
+@balance_router.post("/api/v1/balance/deposit", summary="Deposit")
 async def do_deposit(
     deposit: Body_deposit_api_v1_balance_deposit_post,
     authorization: UUID = Depends(user_authorization),
@@ -27,7 +27,7 @@ async def do_deposit(
     return SuccessResponse()
 
 
-@router_balance.post("/api/v1/balance/withdraw", summary="Withdraw")
+@balance_router.post("/api/v1/balance/withdraw", summary="Withdraw")
 def do_withdraw(
     body: Body_deposit_api_v1_balance_withdraw_post,
     authorization: UUID = Depends(user_authorization),

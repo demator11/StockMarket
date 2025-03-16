@@ -11,10 +11,10 @@ from database.repository.instrument_repository import InstrumentRepository
 from token_management import admin_authorization, user_authorization
 
 
-router_admin = APIRouter()
+admin_router = APIRouter()
 
 
-@router_admin.post("/api/v1/admin/instrument")
+@admin_router.post("/api/v1/admin/instrument")
 async def add_instrument(
     new_instrument: Instrument,
     authorization: UUID = Depends(admin_authorization),
@@ -28,7 +28,7 @@ async def add_instrument(
     return SuccessResponse()
 
 
-@router_admin.delete("/api/v1/admin/instrument/{ticker}")
+@admin_router.delete("/api/v1/admin/instrument/{ticker}")
 def delete_instrument(
     ticker: str, authorization: Annotated[str | None, Header()] = None
 ) -> SuccessResponse:
@@ -36,7 +36,7 @@ def delete_instrument(
     return SuccessResponse()
 
 
-@router_admin.post("/api/v1/admin")
+@admin_router.post("/api/v1/admin")
 async def get_admin_role(authorization: UUID = Depends(user_authorization)):
     await UserRepository.change_user_role(authorization, UserRole.admin)
     return SuccessResponse()

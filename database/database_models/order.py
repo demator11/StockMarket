@@ -1,6 +1,8 @@
 from uuid import UUID, uuid4
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.schema import FetchedValue
 
 from database.engine import Base
 from models.order import Direction, OrderStatus
@@ -9,11 +11,13 @@ from models.order import Direction, OrderStatus
 class OrderOrm(Base):
     __tablename__ = "orders"
 
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=FetchedValue()
+    )
     order_type: Mapped[str]
     status: Mapped[OrderStatus]
     user_id: Mapped[UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE")
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE")
     )
     direction: Mapped[Direction]
     ticker: Mapped[str]

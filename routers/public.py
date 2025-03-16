@@ -1,36 +1,41 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Depends
 
 from models.user import NewUser
 from models.instrument import Instrument
 from models.orderbook import L2OrderBook
 from models.transaction import Transaction
+from database.repository.repositories import get_user_repository
 from database.repository.user_repository import UserRepository
 from database.repository.instrument_repository import InstrumentRepository
 from token_management import create_access_token
 
-router_public = APIRouter()
+public_router = APIRouter()
 
 
-@router_public.post("/api/v1/public/register", summary="Register")
-async def register_new_user(new_user: NewUser, response: Response):
-    check = await UserRepository.check_has_in_database(new_user.name)
+@public_router.post("/api/v1/public/register", summary="Register")
+async def register_new_user(
+    new_user: NewUser,
+    response: Response,
+    user_repository: UserRepository = Depends(get_user_repository),
+):
+    check = await user_repository.check_has_in_database(new_user.name)
     if check:
         raise HTTPException(
             status_code=409, detail="Пользователь уже существует"
         )
     api_key = create_access_token({"sub": new_user.name})
-    result = await UserRepository.create_user(new_user, api_key)
+    result = await user_repository.create_user(new_user, api_key)
     response.headers["Authorization"] = "TOKEN " + api_key
     return result
 
 
-@router_public.get("/api/v1/public/instrument", summary="List instruments")
+@public_router.get("/api/v1/public/instrument", summary="List instruments")
 async def get_instrument_list() -> list[Instrument]:
     result = await InstrumentRepository.get_instrument_list()
     return result
 
 
-@router_public.get(
+@public_router.get(
     "/api/v1/public/orderbook/{ticker}", summary="Get Orderbook"
 )
 def get_orderbook(ticker: str, qty: int = 10) -> L2OrderBook:
@@ -41,7 +46,7 @@ def get_orderbook(ticker: str, qty: int = 10) -> L2OrderBook:
     return result
 
 
-@router_public.get(
+@public_router.get(
     "/api/v1/public/transactions/{ticker}", summary="Get Transaction History"
 )
 def get_transaction_history(ticker: str, limit: int = 10) -> list[Transaction]:

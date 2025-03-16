@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def database_url_asyncpg(
+def get_database_url(
     db_host: str, db_port: str, db_user: str, db_pass: str, db_name: str
 ) -> str:
     return (
@@ -22,7 +22,7 @@ POSTGRESQL_PASS = os.getenv("DB_PASS")
 POSTGRESQL_NAME = os.getenv("DB_NAME")
 
 
-POSTGRESQL_URL = database_url_asyncpg(
+POSTGRESQL_URL = get_database_url(
     db_host=POSTGRESQL_HOST,
     db_port=POSTGRESQL_PORT,
     db_user=POSTGRESQL_USER,
@@ -30,7 +30,7 @@ POSTGRESQL_URL = database_url_asyncpg(
     db_name=POSTGRESQL_NAME,
 )
 
-echo = bool(os.getenv("ECHO"))
+POSTGRES_ECHO = bool(os.getenv("POSTGRES_ECHO"))
 
-secret_key = os.getenv("SECRET_KEY")
-algorithm = os.getenv("ALGORITHM")
+JWT_SECRET_KEY = os.getenv("SECRET_KEY")
+JWT_ALGORITHM = os.getenv("ALGORITHM")

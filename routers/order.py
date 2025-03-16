@@ -12,10 +12,10 @@ from models.order import (
 )
 from models.success_response import SuccessResponse
 
-router_order = APIRouter()
+order_router = APIRouter()
 
 
-@router_order.post("/api/v1/order/", summary="Create Order")
+@order_router.post("/api/v1/order/", summary="Create Order")
 async def create_order_response(
     new_order: LimitOrderBody | MarketOrderBody,
     authorization: UUID = Depends(user_authorization),
@@ -29,7 +29,7 @@ async def create_order_response(
     return await OrderRepository.create_limit_order(new_order, authorization)
 
 
-@router_order.get("/api/v1/order", summary="List Orders")
+@order_router.get("/api/v1/order", summary="List Orders")
 async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
 ):
@@ -37,7 +37,7 @@ async def get_orders_list(
     return result
 
 
-@router_order.get("/api/v1/order/{order_id}", summary="Get Order")
+@order_router.get("/api/v1/order/{order_id}", summary="Get Order")
 async def get_order_by_id(
     order_id: UUID, authorization: UUID = Depends(user_authorization)
 ) -> LimitOrder:
@@ -47,7 +47,7 @@ async def get_order_by_id(
     return result
 
 
-@router_order.delete("/api/v1/order/{order_id}", summary="Cancel Order")
+@order_router.delete("/api/v1/order/{order_id}", summary="Cancel Order")
 async def cancel_order_by_id(
     order_id: UUID, authorization: UUID = Depends(user_authorization)
 ) -> SuccessResponse:

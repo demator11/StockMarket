@@ -1,17 +1,18 @@
 import uvicorn
 from fastapi import FastAPI
 
-from routers.public import router_public
-from routers.balance import router_balance
-from routers.order import router_order
-from routers.admin import router_admin
+from routers.public import public_router
+from routers.balance import balance_router
+from routers.order import order_router
+from routers.admin import admin_router
 
 
 app = FastAPI()
-app.include_router(router_public, tags=["public"])
-app.include_router(router_balance, tags=["balance"])
-app.include_router(router_order, tags=["order"])
-app.include_router(router_admin, tags=["admin"])
+app.include_router(public_router, tags=["public"])
+app.include_router(balance_router, tags=["balance"])
+app.include_router(order_router, tags=["order"])
+app.include_router(admin_router, tags=["admin"])
+
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
 #
