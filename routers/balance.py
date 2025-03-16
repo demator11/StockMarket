@@ -1,20 +1,22 @@
-from typing import Annotated
 from uuid import UUID
-from fastapi import APIRouter, Header, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from models.success_response import SuccessResponse
 from models.body_deposit import Body_deposit_api_v1_balance_deposit_post
 from models.body_withdraw import Body_deposit_api_v1_balance_withdraw_post
 from token_management import user_authorization
 from database.repository.balance_repository import BalanceRepository
-from database.repository.user_repository import UserRepository
+from database.repository.repositories import get_balance_repository
 
 balance_router = APIRouter()
 
 
 @balance_router.get("/api/v1/balance/", summary="Get Balance")
-async def get_balance(authorization: UUID = Depends(user_authorization)):
-    result = await BalanceRepository.get_user_balance(authorization)
+async def get_balance(
+    authorization: UUID = Depends(user_authorization),
+    balance_repository: BalanceRepository = Depends(get_balance_repository),
+):
+    result = await balance_repository.get_user_balance(authorization)
     return result
 
 
@@ -22,8 +24,9 @@ async def get_balance(authorization: UUID = Depends(user_authorization)):
 async def do_deposit(
     deposit: Body_deposit_api_v1_balance_deposit_post,
     authorization: UUID = Depends(user_authorization),
+    balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
-    await BalanceRepository.create_user_deposit(authorization, deposit)
+    await balance_repository.create_user_deposit(authorization, deposit)
     return SuccessResponse()
 
 

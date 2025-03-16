@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from token_management import user_authorization
 from database.repository.order_repository import OrderRepository
+from database.repository.repositories import get_order_repository
 from models.order import (
     LimitOrder,
     LimitOrderBody,
@@ -19,29 +20,33 @@ order_router = APIRouter()
 async def create_order_response(
     new_order: LimitOrderBody | MarketOrderBody,
     authorization: UUID = Depends(user_authorization),
+    order_repository: OrderRepository = Depends(get_order_repository),
 ):
     try:
         new_order.price
     except AttributeError:
-        return await OrderRepository.create_market_order(
+        return await order_repository.create_market_order(
             new_order, authorization
         )
-    return await OrderRepository.create_limit_order(new_order, authorization)
+    return await order_repository.create_limit_order(new_order, authorization)
 
 
 @order_router.get("/api/v1/order", summary="List Orders")
 async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
+    order_repository: OrderRepository = Depends(get_order_repository),
 ):
-    result = await OrderRepository.get_order_list()
+    result = await order_repository.get_order_list()
     return result
 
 
 @order_router.get("/api/v1/order/{order_id}", summary="Get Order")
 async def get_order_by_id(
-    order_id: UUID, authorization: UUID = Depends(user_authorization)
+    order_id: UUID,
+    authorization: UUID = Depends(user_authorization),
+    order_repository: OrderRepository = Depends(get_order_repository),
 ) -> LimitOrder:
-    result = await OrderRepository.get_order_by_id(order_id)
+    result = await order_repository.get_order_by_id(order_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")
     return result
@@ -49,9 +54,11 @@ async def get_order_by_id(
 
 @order_router.delete("/api/v1/order/{order_id}", summary="Cancel Order")
 async def cancel_order_by_id(
-    order_id: UUID, authorization: UUID = Depends(user_authorization)
+    order_id: UUID,
+    authorization: UUID = Depends(user_authorization),
+    order_repository: OrderRepository = Depends(get_order_repository),
 ) -> SuccessResponse:
-    result = await OrderRepository.update_order_status(
+    result = await order_repository.update_order_status(
         order_id=order_id, status=OrderStatus.cancelled
     )
     if result is None:

@@ -22,7 +22,6 @@ class InstrumentRepository:
         )
         return Instrument.from_orm(result.one())
 
-    @staticmethod
     async def check_has_in_database(self, ticker: str) -> bool:
         query = select(InstrumentOrm.ticker).filter(
             InstrumentOrm.ticker == ticker
