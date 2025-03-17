@@ -33,7 +33,7 @@ async def add_instrument(
     check_ticker = await instrument_repository.check_instrument_in_database(
         new_instrument.ticker
     )
-    if check_ticker is False:
+    if check_ticker is not False:
         raise HTTPException(status_code=409, detail="Тикер уже существует")
     await instrument_repository.create_instrument(new_instrument)
     return SuccessResponse()

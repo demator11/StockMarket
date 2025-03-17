@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
 from models.endpoints_models.user import NewUserRequest, UserResponse
-from models.endpoints_models.instrument import Instrument
+from models.orm_models.instrument import Instrument
 from models.endpoints_models.orderbook import L2OrderBook
 from models.endpoints_models.transaction import Transaction
 from database.repository.repositories import (

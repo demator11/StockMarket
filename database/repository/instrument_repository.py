@@ -1,7 +1,7 @@
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.endpoints_models.instrument import Instrument
+from models.orm_models.instrument import Instrument
 from models.database_models.instrument import InstrumentOrm
 
 
