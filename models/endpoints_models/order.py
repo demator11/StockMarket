@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from models.endpoints_models.base import ModelBase
+from models.base import ModelBase
 from models.enum_models.order import Direction, OrderStatus
 
 

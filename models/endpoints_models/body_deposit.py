@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from models.endpoints_models.base import ModelBase
+from models.base import ModelBase
 
 
 class Body_deposit_api_v1_balance_deposit_post(ModelBase):

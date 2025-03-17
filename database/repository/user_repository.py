@@ -4,7 +4,7 @@ from sqlalchemy import select, insert, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.database_models.user import UserOrm
-from models.endpoints_models.user import User, NewUser
+from models.orm_models.user import User, NewUser
 from models.enum_models.user import UserRole
 
 

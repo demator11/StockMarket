@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
-from models.endpoints_models.user import NewUser
+from models.endpoints_models.user import NewUserRequest, UserResponse
 from models.endpoints_models.instrument import Instrument
 from models.endpoints_models.orderbook import L2OrderBook
 from models.endpoints_models.transaction import Transaction
@@ -10,6 +10,7 @@ from database.repository.repositories import (
 )
 from database.repository.user_repository import UserRepository
 from database.repository.instrument_repository import InstrumentRepository
+from models.orm_models.user import NewUser
 from token_management import create_access_token
 
 public_router = APIRouter()
@@ -17,19 +18,23 @@ public_router = APIRouter()
 
 @public_router.post("/api/v1/public/register", summary="Register")
 async def register_new_user(
-    new_user: NewUser,
+    new_user: NewUserRequest,
     response: Response,
     user_repository: UserRepository = Depends(get_user_repository),
 ):
+    new_user = NewUser(name=new_user.name)
     check = await user_repository.check_user_in_database(new_user.name)
     if check:
         raise HTTPException(
             status_code=409, detail="Пользователь уже существует"
         )
     api_key = create_access_token({"sub": new_user.name})
-    result = await user_repository.create_user(new_user, api_key)
+
+    user = await user_repository.create_user(new_user, api_key)
     response.headers["Authorization"] = "TOKEN " + api_key
-    return result
+    return UserResponse(
+        id=user.id, name=user.name, role=user.role, api_key=user.api_key
+    )
 
 
 @public_router.get("/api/v1/public/instrument", summary="List instruments")
