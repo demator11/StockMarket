@@ -3,8 +3,8 @@ from uuid import UUID
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.database_models.balance import BalanceOrm
-from models.body_deposit import (
+from models.database_models.balance import BalanceOrm
+from models.endpoints_models.body_deposit import (
     Body_deposit_api_v1_balance_deposit_post,
     BodyDeposit,
 )

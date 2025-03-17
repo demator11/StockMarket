@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import FetchedValue
 
 from database.engine import Base
-from models.order import Direction, OrderStatus
+from models.enum_models.order import Direction, OrderStatus
 
 
 class OrderOrm(Base):

@@ -1,9 +1,13 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
 
-from models.success_response import SuccessResponse
-from models.body_deposit import Body_deposit_api_v1_balance_deposit_post
-from models.body_withdraw import Body_deposit_api_v1_balance_withdraw_post
+from models.endpoints_models.success_response import SuccessResponse
+from models.endpoints_models.body_deposit import (
+    Body_deposit_api_v1_balance_deposit_post,
+)
+from models.endpoints_models.body_withdraw import (
+    Body_deposit_api_v1_balance_withdraw_post,
+)
 from token_management import user_authorization
 from database.repository.balance_repository import BalanceRepository
 from database.repository.repositories import get_balance_repository

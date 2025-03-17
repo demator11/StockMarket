@@ -1,12 +1,8 @@
 from uuid import UUID
-from enum import StrEnum
 
 from pydantic import BaseModel, Field, ConfigDict
 
-
-class UserRole(StrEnum):
-    user = "USER"
-    admin = "ADMIN"
+from models.enum_models.user import UserRole
 
 
 class NewUser(BaseModel):

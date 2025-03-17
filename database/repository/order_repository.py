@@ -3,17 +3,16 @@ from uuid import UUID
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.order import (
+from models.endpoints_models.order import (
     MarketOrderBody,
     LimitOrderBody,
     CreateOrderResponse,
     RawOrder,
     MarketOrder,
     LimitOrder,
-    Direction,
-    OrderStatus,
 )
-from database.database_models.order import OrderOrm
+from models.enum_models.order import Direction, OrderStatus
+from models.database_models.order import OrderOrm
 
 
 class OrderRepository:

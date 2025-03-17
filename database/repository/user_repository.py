@@ -3,8 +3,9 @@ from uuid import UUID
 from sqlalchemy import select, insert, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.database_models.user import UserOrm
-from models.user import User, NewUser, UserRole
+from models.database_models.user import UserOrm
+from models.endpoints_models.user import User, NewUser
+from models.enum_models.user import UserRole
 
 
 class UserRepository:

@@ -3,9 +3,9 @@ from uuid import UUID
 from typing import Annotated
 from fastapi import APIRouter, Header, HTTPException, Depends
 
-from models.user import UserRole
-from models.instrument import Instrument
-from models.success_response import SuccessResponse
+from models.enum_models.user import UserRole
+from models.endpoints_models.instrument import Instrument
+from models.endpoints_models.success_response import SuccessResponse
 from database.repository.user_repository import UserRepository
 from database.repository.instrument_repository import InstrumentRepository
 from database.repository.repositories import (

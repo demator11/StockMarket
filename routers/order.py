@@ -5,13 +5,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from token_management import user_authorization
 from database.repository.order_repository import OrderRepository
 from database.repository.repositories import get_order_repository
-from models.order import (
+from models.endpoints_models.order import (
     LimitOrder,
     LimitOrderBody,
     MarketOrderBody,
-    OrderStatus,
 )
-from models.success_response import SuccessResponse
+from models.enum_models.order import OrderStatus
+from models.endpoints_models.success_response import SuccessResponse
 
 order_router = APIRouter()
 
