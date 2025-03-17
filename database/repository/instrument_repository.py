@@ -22,7 +22,7 @@ class InstrumentRepository:
         )
         return Instrument.from_orm(result.one())
 
-    async def check_instrument_in_database(self, ticker: str) -> bool:
+    async def exists_in_database(self, ticker: str) -> bool:
         query = select(InstrumentOrm.ticker).where(
             InstrumentOrm.ticker == ticker
         )

@@ -5,13 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.enum_models.order import Direction, OrderStatus
 from models.database_models.order import OrderOrm
-from models.orm_models.order import (
-    LimitOrderBody,
-    Order,
-    MarketOrderBody,
-    LimitOrder,
-    MarketOrder,
-)
+from models.orm_models.order import LimitOrderBody, Order, MarketOrderBody
 
 
 class OrderRepository:
@@ -75,7 +69,6 @@ class OrderRepository:
         self, order_id: UUID, status: OrderStatus
     ) -> bool | None:
         order = await self.db_session.get(OrderOrm, order_id)
-        print(order)
         if order is None:
             return None
         elif order.status == OrderStatus.cancelled:

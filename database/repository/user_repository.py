@@ -20,22 +20,22 @@ class UserRepository:
         )
         return User.from_orm(result.one())
 
-    async def check_user_in_database(self, user_name: str) -> bool:
+    async def exists_in_database(self, user_name: str) -> bool:
         query = select(UserOrm.name).where(UserOrm.name == user_name)
         result = await self.db_session.scalars(query)
         if result.first() is None:
             return False
         return True
 
-    async def check_user_authorization(self, api_key: str):
-        query = select(UserOrm.id).where(UserOrm.api_key == api_key)
+    async def get_user_by_api_key(self, api_key: str) -> User | None:
+        query = select(UserOrm).where(UserOrm.api_key == api_key)
         result = await self.db_session.scalars(query)
-        result = result.first()
-        if result is None:
+        user = User.from_orm(result.first())
+        if user is None:
             return None
-        return result
+        return user
 
-    async def check_admin_authorization(self, api_key: str):
+    async def check_admin_authorization(self, api_key: str) -> bool | None:
         query = select(UserOrm.role).filter(UserOrm.api_key == api_key)
         result = await self.db_session.scalars(query)
         result = result.first()

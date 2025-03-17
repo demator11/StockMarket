@@ -23,8 +23,8 @@ async def register_new_user(
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     new_user = NewUser(name=new_user.name)
-    check = await user_repository.check_user_in_database(new_user.name)
-    if check:
+    user_exists = await user_repository.exists_in_database(new_user.name)
+    if user_exists:
         raise HTTPException(
             status_code=409, detail="Пользователь уже существует"
         )

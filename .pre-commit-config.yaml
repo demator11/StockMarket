@@ -6,14 +6,14 @@ repos:
     hooks:
       - id: black
         name: black
-        entry: black -l 79 -t py312 .
+        entry: black -l 79 -t py313 .
         language: system
         types: [ python ]
         pass_filenames: false
       - id: flake8
         name: flake8
-        entry: venv/Scripts/flake8.exe --ignore=F401
-        language: script
+        entry: flake8 --ignore=F401
+        language: system
         exclude: .ini
         stages:
           - pre-commit
