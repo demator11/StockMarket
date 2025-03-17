@@ -6,51 +6,45 @@ from models.base import ModelBase
 from models.enum_models.order import Direction, OrderStatus
 
 
-class LimitOrderBody(ModelBase):
+class LimitOrderBodyRequest(ModelBase):
     direction: Direction
     ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
     qty: int = Field(ge=1)
     price: int = Field(gt=0)
 
 
-class LimitOrder(ModelBase):
-    id: UUID
-    status: OrderStatus
-    user_id: UUID
-    body: LimitOrderBody
-    filled: int = 0
-
-
-class MarketOrderBody(ModelBase):
-    direction: Direction
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int = Field(ge=1)
-
-
-class MarketOrder(ModelBase):
-    id: UUID
-    status: OrderStatus
-    user_id: UUID
-    body: MarketOrderBody
-
-
-class RawOrderBody:
+class LimitOrderBodyResponse(ModelBase):
     direction: Direction
     ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
     qty: int = Field(ge=1)
     price: int = Field(gt=0)
 
 
-class RawOrder(ModelBase):
+class LimitOrderResponse(ModelBase):
     id: UUID
-    order_type: str
     status: OrderStatus
     user_id: UUID
+    body: LimitOrderBodyRequest
+    filled: int = 0
+
+
+class MarketOrderBodyRequest(ModelBase):
     direction: Direction
     ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int
-    price: int | None
-    filled: int = 0
+    qty: int = Field(ge=1)
+
+
+class MarketOrderBodyResponse(ModelBase):
+    direction: Direction
+    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
+    qty: int = Field(ge=1)
+
+
+class MarketOrderResponse(ModelBase):
+    id: UUID
+    status: OrderStatus
+    user_id: UUID
+    body: MarketOrderBodyRequest
 
 
 class CreateOrderResponse(ModelBase):
