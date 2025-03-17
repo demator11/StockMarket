@@ -31,14 +31,14 @@ async def admin_authorization(
     api_key: str = Security(api_key_header),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    user_id = await user_repository.check_admin_authorization(api_key)
-    if user_id is None:
+    admin_check = await user_repository.check_admin_authorization(api_key)
+    if admin_check is None:
         raise HTTPException(
             status_code=403, detail="Пользователь не авторизован"
         )
-    elif not user_id:
+    elif admin_check is False:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
-    return user_id
+    return admin_check
 
 
 def get_auth_data():

@@ -4,7 +4,10 @@ from models.user import NewUser
 from models.instrument import Instrument
 from models.orderbook import L2OrderBook
 from models.transaction import Transaction
-from database.repository.repositories import get_user_repository
+from database.repository.repositories import (
+    get_user_repository,
+    get_instrument_repository,
+)
 from database.repository.user_repository import UserRepository
 from database.repository.instrument_repository import InstrumentRepository
 from token_management import create_access_token
@@ -18,7 +21,7 @@ async def register_new_user(
     response: Response,
     user_repository: UserRepository = Depends(get_user_repository),
 ):
-    check = await user_repository.check_has_in_database(new_user.name)
+    check = await user_repository.check_user_in_database(new_user.name)
     if check:
         raise HTTPException(
             status_code=409, detail="Пользователь уже существует"
@@ -30,8 +33,12 @@ async def register_new_user(
 
 
 @public_router.get("/api/v1/public/instrument", summary="List instruments")
-async def get_instrument_list() -> list[Instrument]:
-    result = await InstrumentRepository.get_instrument_list()
+async def get_instrument_list(
+    instrument_repository: InstrumentRepository = Depends(
+        get_instrument_repository
+    ),
+) -> list[Instrument]:
+    result = await instrument_repository.get_all_instrument_list()
     return result
 
 

@@ -19,31 +19,29 @@ class UserRepository:
         )
         return User.from_orm(result.one())
 
-    async def check_has_in_database(self, user_name: str) -> bool:
-        query = select(UserOrm.name).filter(UserOrm.name == user_name)
-        result = await self.db_session.execute(query)
+    async def check_user_in_database(self, user_name: str) -> bool:
+        query = select(UserOrm.name).where(UserOrm.name == user_name)
+        result = await self.db_session.scalars(query)
         if result.first() is None:
             return False
         return True
 
     async def check_user_authorization(self, api_key: str):
-        query = select(UserOrm.id).filter(UserOrm.api_key == api_key)
-        result = await self.db_session.execute(query)
+        query = select(UserOrm.id).where(UserOrm.api_key == api_key)
+        result = await self.db_session.scalars(query)
         result = result.first()
         if result is None:
             return None
-        return result[0]
+        return result
 
     async def check_admin_authorization(self, api_key: str):
-        query = select(UserOrm.id, UserOrm.role).filter(
-            UserOrm.api_key == api_key
-        )
-        result = await self.db_session.execute(query)
+        query = select(UserOrm.role).filter(UserOrm.api_key == api_key)
+        result = await self.db_session.scalars(query)
         result = result.first()
         if result is None:
             return None
-        elif result[1] == "ADMIN":
-            return result[0]
+        elif result == "ADMIN":
+            return True
         return False
 
     async def change_user_role(self, user_id: UUID, role: UserRole):

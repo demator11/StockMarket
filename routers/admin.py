@@ -26,7 +26,7 @@ async def add_instrument(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
-    check_ticker = await instrument_repository.check_has_in_database(
+    check_ticker = await instrument_repository.check_instrument_in_database(
         new_instrument.ticker
     )
     if check_ticker:
