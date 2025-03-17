@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Header, HTTPException, Depends
 
 from models.enum_models.user import UserRole
-from models.endpoints_models.instrument import Instrument
+from models.endpoints_models.instrument import InstrumentRequest
 from models.endpoints_models.success_response import SuccessResponse
 from database.repository.user_repository import UserRepository
 from database.repository.instrument_repository import InstrumentRepository
@@ -12,6 +12,7 @@ from database.repository.repositories import (
     get_instrument_repository,
     get_user_repository,
 )
+from models.orm_models.instrument import Instrument
 from token_management import admin_authorization, user_authorization
 
 
@@ -20,16 +21,19 @@ admin_router = APIRouter()
 
 @admin_router.post("/api/v1/admin/instrument")
 async def add_instrument(
-    new_instrument: Instrument,
+    new_instrument: InstrumentRequest,
     authorization: UUID = Depends(admin_authorization),
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
+    new_instrument = Instrument(
+        name=new_instrument.name, ticker=new_instrument.ticker
+    )
     check_ticker = await instrument_repository.check_instrument_in_database(
         new_instrument.ticker
     )
-    if check_ticker:
+    if check_ticker is False:
         raise HTTPException(status_code=409, detail="Тикер уже существует")
     await instrument_repository.create_instrument(new_instrument)
     return SuccessResponse()
