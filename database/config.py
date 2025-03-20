@@ -15,11 +15,11 @@ def get_database_url(
     )
 
 
-POSTGRESQL_USER = os.getenv("DB_USER")
-POSTGRESQL_HOST = os.getenv("DB_HOST")
-POSTGRESQL_PORT = os.getenv("DB_PORT")
-POSTGRESQL_PASS = os.getenv("DB_PASS")
-POSTGRESQL_NAME = os.getenv("DB_NAME")
+POSTGRESQL_USER = os.getenv("POSTGRESQL_USER")
+POSTGRESQL_HOST = os.getenv("POSTGRESQL_HOST")
+POSTGRESQL_PORT = os.getenv("POSTGRESQL_PORT")
+POSTGRESQL_PASS = os.getenv("POSTGRESQL_PASS")
+POSTGRESQL_NAME = os.getenv("POSTGRESQL_NAME")
 
 
 POSTGRESQL_URL = get_database_url(
@@ -30,7 +30,7 @@ POSTGRESQL_URL = get_database_url(
     db_name=POSTGRESQL_NAME,
 )
 
-POSTGRES_ECHO = bool(os.getenv("POSTGRES_ECHO"))
+POSTGRESQL_ECHO = bool(os.getenv("POSTGRESQL_ECHO"))
 
 JWT_SECRET_KEY = os.getenv("SECRET_KEY")
 JWT_ALGORITHM = os.getenv("ALGORITHM")

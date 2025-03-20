@@ -8,6 +8,7 @@ from models.endpoints_models.body_deposit import (
 from models.endpoints_models.body_withdraw import (
     Body_deposit_api_v1_balance_withdraw_post,
 )
+from models.orm_models.deposit import Deposit, NewDeposit
 from token_management import user_authorization
 from database.repository.balance_repository import BalanceRepository
 from database.repository.repositories import get_balance_repository
@@ -20,8 +21,13 @@ async def get_balance(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ):
-    result = await balance_repository.get_user_balance(authorization)
-    return result
+    result = await balance_repository.get_user_by_id(authorization)
+    balance_dict = {}
+    if result is None:
+        return balance_dict
+    for row in result:
+        balance_dict[row.ticker] = row.qty
+    return balance_dict
 
 
 @balance_router.post("/api/v1/balance/deposit", summary="Deposit")
@@ -30,7 +36,10 @@ async def do_deposit(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
-    await balance_repository.create_user_deposit(authorization, deposit)
+    deposit = NewDeposit(
+        user_id=authorization, ticker=deposit.ticker, qty=deposit.amount
+    )
+    await balance_repository.create_user_deposit(deposit)
     return SuccessResponse()
 
 

@@ -5,13 +5,7 @@ from pydantic import Field
 from models.base import ModelBase
 
 
-class NewDeposit(ModelBase):
-    user_id: UUID
-    ticker: str
-    qty: int = Field(gt=0)
-
-
-class Deposit(ModelBase):
+class Balance(ModelBase):
     id: UUID
     user_id: UUID
     ticker: str

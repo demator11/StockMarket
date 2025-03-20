@@ -4,32 +4,28 @@ from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.database_models.balance import BalanceOrm
-from models.endpoints_models.body_deposit import (
-    Body_deposit_api_v1_balance_deposit_post,
-)
-from models.orm_models.deposit import Deposit
+from models.orm_models.balance import Balance
+from models.orm_models.deposit import NewDeposit
 
 
 class BalanceRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_user_deposit(self, user_id: UUID, deposit: Deposit):
+    async def create_user_deposit(self, deposit: NewDeposit) -> None:
         await self.db_session.scalars(
             insert(BalanceOrm)
             .values(
-                user_id=user_id,
-                currency=deposit.ticker,
-                qty=deposit.amount,
+                user_id=deposit.user_id,
+                ticker=deposit.ticker,
+                qty=deposit.qty,
             )
             .returning(BalanceOrm)
         )
 
-    async def get_user_balance(self, user_id: UUID):
+    async def get_user_by_id(self, user_id: UUID) -> list[Balance] | None:
         query = select(BalanceOrm).where(BalanceOrm.user_id == user_id)
         result = await self.db_session.execute(query)
-        balance_dict = {}
-        for x in result.scalars().all():
-            deposit = Deposit.from_orm(x)
-            balance_dict[deposit.currency] = deposit.qty
-        return balance_dict
+        if result is None:
+            return None
+        return [Balance.model_validate(row) for row in result.scalars().all()]

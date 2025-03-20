@@ -3,13 +3,13 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
-from database.config import POSTGRESQL_URL, POSTGRES_ECHO
+from database.config import POSTGRESQL_URL, POSTGRESQL_ECHO
 
 load_dotenv()
 
 async_engine = create_async_engine(
     url=POSTGRESQL_URL,
-    echo=POSTGRES_ECHO,
+    echo=POSTGRESQL_ECHO,
 )
 
 

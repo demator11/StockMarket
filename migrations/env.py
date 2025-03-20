@@ -5,6 +5,10 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from database.config import POSTGRESQL_URL
+from database.repository.user_repository import UserOrm
+from database.repository.balance_repository import BalanceOrm
+from database.repository.order_repository import OrderOrm
+from database.repository.instrument_repository import InstrumentOrm
 from database.engine import Base
 
 config = context.config

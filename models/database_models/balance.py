@@ -15,5 +15,5 @@ class BalanceOrm(Base):
     user_id: Mapped[str] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE")
     )
-    currency: Mapped[str]
+    ticker: Mapped[str]
     qty: Mapped[int]
