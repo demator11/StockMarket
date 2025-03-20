@@ -43,7 +43,7 @@ async def get_instrument_list(
         get_instrument_repository
     ),
 ) -> list[Instrument]:
-    result = await instrument_repository.get_all_instrument_list()
+    result = await instrument_repository.get_all()
     return result
 
 

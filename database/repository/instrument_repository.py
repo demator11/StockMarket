@@ -9,14 +9,12 @@ class InstrumentRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_instrument(
-        self, new_instrument: Instrument
-    ) -> Instrument:
+    async def create(self, instrument: Instrument) -> Instrument:
         result = await self.db_session.scalars(
             insert(InstrumentOrm)
             .values(
-                name=new_instrument.name,
-                ticker=new_instrument.ticker,
+                name=instrument.name,
+                ticker=instrument.ticker,
             )
             .returning(InstrumentOrm)
         )
@@ -29,7 +27,7 @@ class InstrumentRepository:
         result = await self.db_session.scalars(query)
         return result.one_or_none() is not None
 
-    async def get_all_instrument_list(self) -> list[Instrument]:
+    async def get_all(self) -> list[Instrument]:
         query = select(InstrumentOrm)
-        result = await self.db_session.execute(query)
-        return [Instrument.from_orm(x) for x in result.scalars().all()]
+        result = await self.db_session.scalars(query)
+        return [Instrument.from_orm(x) for x in result.all()]
