@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime, timedelta, UTC
 
-from application.database.config import JWT_SECRET_KEY, JWT_ALGORITHM
+from application.database.config import JWT_SECRET_KEY
 from dotenv import load_dotenv
 from fastapi import Security, HTTPException, Depends
 from fastapi.security.api_key import APIKeyHeader
@@ -45,7 +45,7 @@ async def admin_authorization(
 def get_auth_data():
     return {
         "secret_key": JWT_SECRET_KEY,
-        "algorithm": JWT_ALGORITHM,
+        "algorithm": "HS256",
     }
 
 

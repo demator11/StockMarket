@@ -33,4 +33,3 @@ POSTGRESQL_URL = get_database_url(
 POSTGRESQL_ECHO = bool(os.getenv("POSTGRESQL_ECHO"))
 
 JWT_SECRET_KEY = os.getenv("SECRET_KEY")
-JWT_ALGORITHM = os.getenv("ALGORITHM")

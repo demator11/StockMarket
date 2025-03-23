@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
+from application.models.endpoint_models.instrument import InstrumentResponse
 from application.models.endpoint_models.user import (
     CreateUserRequest,
     UserResponse,
@@ -48,9 +49,14 @@ async def get_list_instrument(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
-) -> list[Instrument]:
+) -> list[InstrumentResponse]:
     result = await instrument_repository.get_all()
-    return result
+    instrument_list = []
+    for instrument in result:
+        instrument_list.append(
+            InstrumentResponse(name=instrument.name, ticker=instrument.ticker)
+        )
+    return instrument_list
 
 
 @public_router.get("/orderbook/{ticker}", summary="Get Orderbook")
