@@ -33,17 +33,18 @@ async def register_new_user(
         raise HTTPException(
             status_code=409, detail="Пользователь уже существует"
         )
-    api_key = create_access_token({"sub": new_user.name})
 
+    api_key = create_access_token({"sub": new_user.name})
     user = await user_repository.create(new_user, api_key)
     response.headers["Authorization"] = "TOKEN " + api_key
+
     return UserResponse(
         id=user.id, name=user.name, role=user.role, api_key=user.api_key
     )
 
 
 @public_router.get("/instrument", summary="List instruments")
-async def get_instrument_list(
+async def get_list_instrument(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),

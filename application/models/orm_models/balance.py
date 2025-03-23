@@ -13,7 +13,8 @@ class BalanceOrm(Base):
         primary_key=True, default=uuid4, server_default=FetchedValue()
     )
     user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE")
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        index=True,
     )
-    ticker: Mapped[str]
+    ticker: Mapped[str] = mapped_column(index=True)
     qty: Mapped[int]
