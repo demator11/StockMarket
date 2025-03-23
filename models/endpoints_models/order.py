@@ -6,6 +6,13 @@ from models.base import ModelBase
 from models.enum_models.order import Direction, OrderStatus
 
 
+class NewOrderBodyRequest(ModelBase):
+    direction: Direction
+    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
+    qty: int = Field(ge=1)
+    price: int = Field(gt=0, default=None)
+
+
 class LimitOrderBodyRequest(ModelBase):
     direction: Direction
     ticker: str = Field(pattern=r"^[A-Z]{2,10}$")

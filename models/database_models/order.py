@@ -14,7 +14,6 @@ class OrderOrm(Base):
     id: Mapped[UUID] = mapped_column(
         primary_key=True, default=uuid4, server_default=FetchedValue()
     )
-    order_type: Mapped[str]
     status: Mapped[OrderStatus]
     user_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE")

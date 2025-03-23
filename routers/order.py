@@ -2,7 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from models.orm_models.order import LimitOrderBody, MarketOrderBody
+from models.orm_models.order import (
+    LimitOrderBody,
+    MarketOrderBody,
+    OrderBody,
+    UpdateOrder,
+)
 from token_management import user_authorization
 from database.repository.order_repository import OrderRepository
 from database.repository.repositories import get_order_repository
@@ -14,6 +19,7 @@ from models.endpoints_models.order import (
     MarketOrderResponse,
     MarketOrderBodyResponse,
     LimitOrderBodyResponse,
+    NewOrderBodyRequest,
 )
 from models.enum_models.order import OrderStatus
 from models.endpoints_models.success_response import SuccessResponse
@@ -23,29 +29,17 @@ order_router = APIRouter()
 
 @order_router.post("/api/v1/order/", summary="Create Order")
 async def create_order_response(
-    new_order: LimitOrderBodyRequest | MarketOrderBodyRequest,
+    new_order: NewOrderBodyRequest,
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
-):
-    if isinstance(new_order, LimitOrderBody):
-        new_order = LimitOrderBody(
-            direction=new_order.direction,
-            ticker=new_order.ticker,
-            qty=new_order.qty,
-            price=new_order.price,
-        )
-        order = await order_repository.create_limit_order(
-            new_order, authorization
-        )
-        return CreateOrderResponse(order_id=order.id)
-    new_order = MarketOrderBody(
+) -> CreateOrderResponse:
+    order_body = OrderBody(
         direction=new_order.direction,
         ticker=new_order.ticker,
         qty=new_order.qty,
+        price=new_order.price,
     )
-    order = await order_repository.create_market_order(
-        new_order, authorization
-    )
+    order = await order_repository.create(authorization, order_body)
     return CreateOrderResponse(order_id=order.id)
 
 
@@ -54,7 +48,7 @@ async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> list[LimitOrderResponse | MarketOrderResponse]:
-    result = await order_repository.get_all_order_list()
+    result = await order_repository.get_all()
     order_list = []
     for order in result:
         if order.price is None:
@@ -95,7 +89,7 @@ async def get_order_by_id(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> LimitOrderResponse | MarketOrderResponse:
-    order = await order_repository.get_order_by_id(order_id)
+    order = await order_repository.get_by_id(order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")
     elif order.price is None:
@@ -129,11 +123,14 @@ async def cancel_order_by_id(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> SuccessResponse:
-    result = await order_repository.update_order_status(
-        order_id=order_id, status=OrderStatus.cancelled
-    )
-    if result is None:
+
+    order_check = await order_repository.get_by_id(order_id)
+    if order_check is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")
-    elif result is False:
+    elif order_check.status == OrderStatus.cancelled:
         raise HTTPException(status_code=406, detail="Ордер уже отменён")
+
+    await order_repository.update(
+        UpdateOrder(id=order_id, status=OrderStatus.cancelled)
+    )
     return SuccessResponse()

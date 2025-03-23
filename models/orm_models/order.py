@@ -34,9 +34,19 @@ class MarketOrder(ModelBase):
     body: MarketOrderBody
 
 
+class UpdateOrder(ModelBase):
+    id: UUID
+    status: OrderStatus | None = None
+    user_id: UUID | None = None
+    direction: Direction | None = None
+    ticker: str | None = None
+    qty: int | None = None
+    price: int | None = None
+    filled: int | None = None
+
+
 class Order(ModelBase):
     id: UUID
-    order_type: str
     status: OrderStatus
     user_id: UUID
     direction: Direction
@@ -44,3 +54,10 @@ class Order(ModelBase):
     qty: int
     price: int | None
     filled: int = 0
+
+
+class OrderBody(ModelBase):
+    direction: Direction
+    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
+    qty: int = Field(ge=1)
+    price: int = Field(gt=0, default=None)
