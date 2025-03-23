@@ -110,5 +110,5 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("instrument")
     sa.Enum(name="orderstatus").drop(op.get_bind(), checkfirst=False)
-    sa.Enum(name="direction").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="orderdirection").drop(op.get_bind(), checkfirst=False)
     # ### end Alembic commands ###

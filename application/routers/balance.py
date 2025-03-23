@@ -43,7 +43,7 @@ async def create_deposit(
     deposit = NewDeposit(
         user_id=authorization, ticker=deposit.ticker, qty=deposit.amount
     )
-    await balance_repository.create_user_deposit(deposit)
+    await balance_repository.create_or_update_user_deposit(deposit)
     return SuccessResponse()
 
 
