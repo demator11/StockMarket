@@ -2,23 +2,23 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from application.models.orm_models.order import (
+from application.models.database_models.order import (
     OrderBody,
     UpdateOrder,
 )
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
 from application.di.repositories import get_order_repository
-from application.models.endpoints_models.order import (
+from application.models.endpoint_models.order import (
     LimitOrderResponse,
     CreateOrderResponse,
     MarketOrderResponse,
     MarketOrderBodyResponse,
     LimitOrderBodyResponse,
-    NewOrderBodyRequest,
+    CreateOrderBodyRequest,
 )
 from application.models.enum_models.order import OrderStatus
-from application.models.endpoints_models.success_response import (
+from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
 
@@ -27,7 +27,7 @@ order_router = APIRouter()
 
 @order_router.post("/api/v1/order/", summary="Create Order")
 async def create_order_response(
-    new_order: NewOrderBodyRequest,
+    new_order: CreateOrderBodyRequest,
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> CreateOrderResponse:

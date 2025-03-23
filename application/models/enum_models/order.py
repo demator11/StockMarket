@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-class Direction(StrEnum):
+class OrderDirection(StrEnum):
     buy = "BUY"
     sell = "SELL"
 

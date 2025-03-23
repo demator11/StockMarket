@@ -1,8 +1,16 @@
-from pydantic import Field
+from uuid import UUID, uuid4
 
-from application.models.base import ModelBase
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.schema import FetchedValue
+
+from application.database.engine import Base
 
 
-class Instrument(ModelBase):
-    name: str
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
+class InstrumentOrm(Base):
+    __tablename__ = "instrument"
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=FetchedValue()
+    )
+    name: Mapped[str]
+    ticker: Mapped[str]

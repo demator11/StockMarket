@@ -3,9 +3,9 @@ from uuid import UUID
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.enum_models.order import Direction, OrderStatus
-from application.models.database_models.order import OrderOrm
-from application.models.orm_models.order import (
+from application.models.enum_models.order import OrderDirection, OrderStatus
+from application.models.orm_models.order import OrderOrm
+from application.models.database_models.order import (
     Order,
     OrderBody,
     UpdateOrder,
@@ -22,7 +22,7 @@ class OrderRepository:
             .values(
                 status=OrderStatus.new,
                 user_id=user_id,
-                direction=Direction(order.direction),
+                direction=OrderDirection(order.direction),
                 ticker=order.ticker,
                 qty=order.qty,
                 price=order.price,

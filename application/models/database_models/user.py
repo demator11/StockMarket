@@ -1,16 +1,15 @@
-from uuid import UUID, uuid4
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.schema import FetchedValue
+from uuid import UUID
 
-from application.database.engine import Base
+from application.models.enum_models.user import UserRole
+from application.models.base import ModelBase
 
 
-class UserOrm(Base):
-    __tablename__ = "users"
+class NewUser(ModelBase):
+    name: str
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=uuid4, server_default=FetchedValue()
-    )
-    name: Mapped[str]
-    role: Mapped[str]
-    api_key: Mapped[str]
+
+class User(ModelBase):
+    id: UUID
+    name: str
+    role: UserRole = UserRole.user
+    api_key: str

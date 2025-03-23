@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
-from application.models.endpoints_models.user import (
-    NewUserRequest,
+from application.models.endpoint_models.user import (
+    CreateUserRequest,
     UserResponse,
 )
-from application.models.orm_models.instrument import Instrument
-from application.models.endpoints_models.orderbook import L2OrderBook
-from application.models.endpoints_models.transaction import Transaction
+from application.models.database_models.instrument import Instrument
+from application.models.endpoint_models.orderbook import L2OrderBook
+from application.models.endpoint_models.transaction import Transaction
 from application.di.repositories import (
     get_user_repository,
     get_instrument_repository,
@@ -15,7 +15,7 @@ from application.database.repository.user_repository import UserRepository
 from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
-from application.models.orm_models.user import NewUser
+from application.models.database_models.user import NewUser
 from application.token_management import create_access_token
 
 public_router = APIRouter()
@@ -23,7 +23,7 @@ public_router = APIRouter()
 
 @public_router.post("/api/v1/public/register", summary="Register")
 async def register_new_user(
-    new_user: NewUserRequest,
+    new_user: CreateUserRequest,
     response: Response,
     user_repository: UserRepository = Depends(get_user_repository),
 ):

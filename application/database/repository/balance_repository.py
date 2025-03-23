@@ -3,9 +3,9 @@ from uuid import UUID
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.database_models.balance import BalanceOrm
-from application.models.orm_models.balance import Balance
-from application.models.orm_models.deposit import NewDeposit
+from application.models.orm_models.balance import BalanceOrm
+from application.models.database_models.balance import Balance
+from application.models.database_models.deposit import NewDeposit
 
 
 class BalanceRepository:

@@ -1,16 +1,15 @@
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from application.models.enum_models.user import UserRole
-from application.models.base import ModelBase
 
 
-class NewUserRequest(ModelBase):
+class CreateUserRequest(BaseModel):
     name: str = Field(min_length=3)
 
 
-class UserResponse(ModelBase):
+class UserResponse(BaseModel):
     id: UUID
     name: str
     role: UserRole = UserRole.user

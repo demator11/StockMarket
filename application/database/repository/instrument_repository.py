@@ -1,8 +1,8 @@
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.orm_models.instrument import Instrument
-from application.models.database_models.instrument import InstrumentOrm
+from application.models.database_models.instrument import Instrument
+from application.models.orm_models.instrument import InstrumentOrm
 
 
 class InstrumentRepository:

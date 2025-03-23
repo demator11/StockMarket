@@ -1,63 +1,25 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from pydantic import Field
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.schema import FetchedValue
 
-from application.models.base import ModelBase
-from application.models.enum_models.order import Direction, OrderStatus
-
-
-class LimitOrderBody(ModelBase):
-    direction: Direction
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int = Field(ge=1)
-    price: int = Field(gt=0)
+from application.database.engine import Base
+from application.models.enum_models.order import OrderDirection, OrderStatus
 
 
-class LimitOrder(ModelBase):
-    id: UUID
-    status: OrderStatus
-    user_id: UUID
-    body: LimitOrderBody
-    filled: int = 0
+class OrderOrm(Base):
+    __tablename__ = "orders"
 
-
-class MarketOrderBody(ModelBase):
-    direction: Direction
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int = Field(ge=1)
-
-
-class MarketOrder(ModelBase):
-    id: UUID
-    status: OrderStatus
-    user_id: UUID
-    body: MarketOrderBody
-
-
-class UpdateOrder(ModelBase):
-    id: UUID
-    status: OrderStatus | None = None
-    user_id: UUID | None = None
-    direction: Direction | None = None
-    ticker: str | None = None
-    qty: int | None = None
-    price: int | None = None
-    filled: int | None = None
-
-
-class Order(ModelBase):
-    id: UUID
-    status: OrderStatus
-    user_id: UUID
-    direction: Direction
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int
-    price: int | None
-    filled: int = 0
-
-
-class OrderBody(ModelBase):
-    direction: Direction
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int = Field(ge=1)
-    price: int = Field(gt=0, default=None)
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid4, server_default=FetchedValue()
+    )
+    status: Mapped[OrderStatus]
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE")
+    )
+    direction: Mapped[OrderDirection]
+    ticker: Mapped[str]
+    qty: Mapped[int]
+    price: Mapped[int | None] = mapped_column(nullable=True)
+    filled: Mapped[int] = mapped_column(default=0, server_default="0")

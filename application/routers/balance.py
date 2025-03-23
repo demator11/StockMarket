@@ -1,16 +1,16 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
 
-from application.models.endpoints_models.success_response import (
+from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
-from application.models.endpoints_models.body_deposit import (
-    Body_deposit_api_v1_balance_deposit_post,
+from application.models.endpoint_models.body_deposit import (
+    CreateBodyDepositRequest,
 )
-from application.models.endpoints_models.body_withdraw import (
-    Body_deposit_api_v1_balance_withdraw_post,
+from application.models.endpoint_models.body_withdraw import (
+    CreateBodyWithdrawRequest,
 )
-from application.models.orm_models.deposit import NewDeposit
+from application.models.database_models.deposit import NewDeposit
 from application.token_management import user_authorization
 from application.database.repository.balance_repository import (
     BalanceRepository,
@@ -36,7 +36,7 @@ async def get_balance(
 
 @balance_router.post("/api/v1/balance/deposit", summary="Deposit")
 async def do_deposit(
-    deposit: Body_deposit_api_v1_balance_deposit_post,
+    deposit: CreateBodyDepositRequest,
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
@@ -49,7 +49,7 @@ async def do_deposit(
 
 @balance_router.post("/api/v1/balance/withdraw", summary="Withdraw")
 def do_withdraw(
-    body: Body_deposit_api_v1_balance_withdraw_post,
+    body: CreateBodyWithdrawRequest,
     authorization: UUID = Depends(user_authorization),
 ) -> SuccessResponse:
     # пытаемся вывести коины с баланса юзера
