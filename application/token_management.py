@@ -7,8 +7,9 @@ from fastapi import Security, HTTPException, Depends
 from fastapi.security.api_key import APIKeyHeader
 from jose import jwt
 
-from application.database.repository.repositories import get_user_repository
+from application.di.repositories import get_user_repository
 from application.database.repository.user_repository import UserRepository
+from application.models.enum_models.user import UserRole
 
 load_dotenv()
 
@@ -31,15 +32,14 @@ async def admin_authorization(
     api_key: str = Security(api_key_header),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    admin_check = await user_repository.check_admin_authorization(api_key)
-    if admin_check is None:
+    admin = await user_repository.get_user_by_api_key(api_key)
+    if admin is None:
         raise HTTPException(
             status_code=401, detail="Пользователь не авторизован"
         )
-    elif admin_check is False:
+    elif admin.role != UserRole.admin:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
-    user = await user_repository.get_user_by_api_key(api_key)
-    return user.id
+    return admin.id
 
 
 def get_auth_data():

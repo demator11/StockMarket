@@ -28,20 +28,9 @@ class UserRepository:
     async def get_user_by_api_key(self, api_key: str) -> User | None:
         query = select(UserOrm).where(UserOrm.api_key == api_key)
         result = await self.db_session.scalars(query)
-        user = User.model_validate(result.first())
-        return user.one_or_none()
+        return result.one_or_none()
 
-    async def check_admin_authorization(self, api_key: str) -> bool | None:
-        query = select(UserOrm.role).filter(UserOrm.api_key == api_key)
-        result = await self.db_session.scalars(query)
-        result = result.first()
-        if result is None:
-            return None
-        elif result == "ADMIN":
-            return True
-        return False
-
-    async def change_user_role(self, user_id: UUID, role: UserRole):
+    async def change_user_role(self, user_id: UUID, role: UserRole) -> None:
         await self.db_session.execute(
             update(UserOrm).where(UserOrm.id == user_id).values(role=role)
         )

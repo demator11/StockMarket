@@ -7,7 +7,7 @@ from application.models.endpoints_models.user import (
 from application.models.orm_models.instrument import Instrument
 from application.models.endpoints_models.orderbook import L2OrderBook
 from application.models.endpoints_models.transaction import Transaction
-from application.database.repository.repositories import (
+from application.di.repositories import (
     get_user_repository,
     get_instrument_repository,
 )

@@ -15,7 +15,7 @@ from application.token_management import user_authorization
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
-from application.database.repository.repositories import get_balance_repository
+from application.di.repositories import get_balance_repository
 
 balance_router = APIRouter()
 

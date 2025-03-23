@@ -8,7 +8,7 @@ from application.models.orm_models.order import (
 )
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
-from application.database.repository.repositories import get_order_repository
+from application.di.repositories import get_order_repository
 from application.models.endpoints_models.order import (
     LimitOrderResponse,
     CreateOrderResponse,

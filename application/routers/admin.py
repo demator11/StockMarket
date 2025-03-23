@@ -12,7 +12,7 @@ from application.database.repository.user_repository import UserRepository
 from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
-from application.database.repository.repositories import (
+from application.di.repositories import (
     get_instrument_repository,
     get_user_repository,
 )
