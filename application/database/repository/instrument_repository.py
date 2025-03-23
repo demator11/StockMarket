@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.database_models.instrument import Instrument
@@ -31,3 +31,10 @@ class InstrumentRepository:
         query = select(InstrumentOrm)
         result = await self.db_session.scalars(query)
         return [Instrument.model_validate(row) for row in result.all()]
+
+    async def delete(self, ticker: str) -> None:
+        await self.db_session.scalars(
+            delete(InstrumentOrm)
+            .where(InstrumentOrm.ticker == ticker)
+            .returning(InstrumentOrm)
+        )

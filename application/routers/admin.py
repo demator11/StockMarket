@@ -49,14 +49,20 @@ async def add_instrument(
 
 
 @admin_router.delete("/instrument/{ticker}")
-def delete_instrument(
+async def delete_instrument(
     ticker: str,
     authorization: UUID = Depends(admin_authorization),
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
-    # удаляем инструмент
+    check_ticker_exists = await instrument_repository.exists_in_database(
+        ticker
+    )
+    if check_ticker_exists is False:
+        raise HTTPException(status_code=404, detail="Тикер не найден")
+
+    await instrument_repository.delete(ticker)
     return SuccessResponse()
 
 
