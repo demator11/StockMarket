@@ -18,7 +18,7 @@ class InstrumentRepository:
             )
             .returning(InstrumentOrm)
         )
-        return Instrument.from_orm(result.one())
+        return Instrument.model_validate(result.one())
 
     async def exists_in_database(self, ticker: str) -> bool:
         query = select(InstrumentOrm.ticker).where(
@@ -30,4 +30,4 @@ class InstrumentRepository:
     async def get_all(self) -> list[Instrument]:
         query = select(InstrumentOrm)
         result = await self.db_session.scalars(query)
-        return [Instrument.from_orm(x) for x in result.all()]
+        return [Instrument.model_validate(row) for row in result.all()]

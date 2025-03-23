@@ -29,7 +29,7 @@ class OrderRepository:
             )
             .returning(OrderOrm)
         )
-        return Order.from_orm(result.one())
+        return Order.model_validate(result.one())
 
     async def get_all(self) -> list[Order]:
         query = select(OrderOrm)
@@ -43,7 +43,7 @@ class OrderRepository:
         result = await self.db_session.get(OrderOrm, order_id)
         if not result:
             return None
-        return Order.from_orm(result)
+        return Order.model_validate(result)
 
     async def update(self, params: UpdateOrder) -> None:
         update_values = params.dict(exclude_unset=True, exclude={"id"})

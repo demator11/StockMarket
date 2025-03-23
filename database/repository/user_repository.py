@@ -18,19 +18,17 @@ class UserRepository:
             .values(name=new_user.name, role=UserRole.user, api_key=api_key)
             .returning(UserOrm)
         )
-        return User.from_orm(result.one())
+        return User.model_validate(result.one())
 
     async def exists_in_database(self, user_name: str) -> bool:
         query = select(UserOrm.name).where(UserOrm.name == user_name)
         result = await self.db_session.scalars(query)
-        if result.first() is None:
-            return False
-        return True
+        return result.one_or_none() is not None
 
     async def get_user_by_api_key(self, api_key: str) -> User | None:
         query = select(UserOrm).where(UserOrm.api_key == api_key)
         result = await self.db_session.scalars(query)
-        user = User.from_orm(result.first())
+        user = User.model_validate(result.first())
         if user is None:
             return None
         return user
