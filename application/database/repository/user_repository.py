@@ -12,7 +12,7 @@ class UserRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_user(self, new_user: NewUser, api_key: str) -> User:
+    async def create(self, new_user: NewUser, api_key: str) -> User:
         result = await self.db_session.scalars(
             insert(UserOrm)
             .values(name=new_user.name, role=UserRole.user, api_key=api_key)
@@ -25,7 +25,7 @@ class UserRepository:
         result = await self.db_session.scalars(query)
         return result.one_or_none() is not None
 
-    async def get_user_by_api_key(self, api_key: str) -> User | None:
+    async def get_by_api_key(self, api_key: str) -> User | None:
         query = select(UserOrm).where(UserOrm.api_key == api_key)
         result = await self.db_session.scalars(query)
         return result.one_or_none()

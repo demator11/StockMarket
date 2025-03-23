@@ -20,7 +20,7 @@ async def user_authorization(
     api_key: str = Security(api_key_header),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    user_id = await user_repository.get_user_by_api_key(api_key)
+    user_id = await user_repository.get_by_api_key(api_key)
     if user_id is None:
         raise HTTPException(
             status_code=401, detail="Пользователь не авторизован"
@@ -32,7 +32,7 @@ async def admin_authorization(
     api_key: str = Security(api_key_header),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    admin = await user_repository.get_user_by_api_key(api_key)
+    admin = await user_repository.get_by_api_key(api_key)
     if admin is None:
         raise HTTPException(
             status_code=401, detail="Пользователь не авторизован"

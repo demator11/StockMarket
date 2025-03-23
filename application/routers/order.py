@@ -90,7 +90,7 @@ async def get_order_by_id(
     order = await order_repository.get_by_id(order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")
-    elif order.price is None:
+    if order.price is None:
         return MarketOrderResponse(
             id=order.id,
             status=order.status,

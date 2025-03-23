@@ -35,7 +35,7 @@ async def register_new_user(
         )
     api_key = create_access_token({"sub": new_user.name})
 
-    user = await user_repository.create_user(new_user, api_key)
+    user = await user_repository.create(new_user, api_key)
     response.headers["Authorization"] = "TOKEN " + api_key
     return UserResponse(
         id=user.id, name=user.name, role=user.role, api_key=user.api_key

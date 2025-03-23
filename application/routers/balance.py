@@ -35,7 +35,7 @@ async def get_balance(
 
 
 @balance_router.post("/deposit", summary="Deposit")
-async def do_deposit(
+async def create_deposit(
     deposit: CreateBodyDepositRequest,
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
@@ -48,7 +48,7 @@ async def do_deposit(
 
 
 @balance_router.post("/withdraw", summary="Withdraw")
-def do_withdraw(
+def create_withdraw(
     body: CreateBodyWithdrawRequest,
     authorization: UUID = Depends(user_authorization),
 ) -> SuccessResponse:
