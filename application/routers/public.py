@@ -18,10 +18,10 @@ from application.database.repository.instrument_repository import (
 from application.models.database_models.user import NewUser
 from application.token_management import create_access_token
 
-public_router = APIRouter()
+public_router = APIRouter(prefix="/api/v1/public")
 
 
-@public_router.post("/api/v1/public/register", summary="Register")
+@public_router.post("/register", summary="Register")
 async def register_new_user(
     new_user: CreateUserRequest,
     response: Response,
@@ -42,7 +42,7 @@ async def register_new_user(
     )
 
 
-@public_router.get("/api/v1/public/instrument", summary="List instruments")
+@public_router.get("/instrument", summary="List instruments")
 async def get_instrument_list(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
@@ -52,9 +52,7 @@ async def get_instrument_list(
     return result
 
 
-@public_router.get(
-    "/api/v1/public/orderbook/{ticker}", summary="Get Orderbook"
-)
+@public_router.get("/orderbook/{ticker}", summary="Get Orderbook")
 def get_orderbook(ticker: str, qty: int = 10) -> L2OrderBook:
     # достаем список из qty бидов и асков по нужному ticker
     bid_levels = [{"price": 1, "qty": 1}, {"price": 2, "qty": 2}]
@@ -63,9 +61,7 @@ def get_orderbook(ticker: str, qty: int = 10) -> L2OrderBook:
     return result
 
 
-@public_router.get(
-    "/api/v1/public/transactions/{ticker}", summary="Get Transaction History"
-)
+@public_router.get("/transactions/{ticker}", summary="Get Transaction History")
 def get_transaction_history(ticker: str, limit: int = 10) -> list[Transaction]:
     # получаем до limit транзакций по нужному ticker
     result = []

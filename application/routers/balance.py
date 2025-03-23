@@ -17,10 +17,10 @@ from application.database.repository.balance_repository import (
 )
 from application.di.repositories import get_balance_repository
 
-balance_router = APIRouter()
+balance_router = APIRouter(prefix="/api/v1/balance")
 
 
-@balance_router.get("/api/v1/balance/", summary="Get Balance")
+@balance_router.get("/", summary="Get Balance")
 async def get_balance(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
@@ -34,7 +34,7 @@ async def get_balance(
     return balance_dict
 
 
-@balance_router.post("/api/v1/balance/deposit", summary="Deposit")
+@balance_router.post("/deposit", summary="Deposit")
 async def do_deposit(
     deposit: CreateBodyDepositRequest,
     authorization: UUID = Depends(user_authorization),
@@ -47,7 +47,7 @@ async def do_deposit(
     return SuccessResponse()
 
 
-@balance_router.post("/api/v1/balance/withdraw", summary="Withdraw")
+@balance_router.post("/withdraw", summary="Withdraw")
 def do_withdraw(
     body: CreateBodyWithdrawRequest,
     authorization: UUID = Depends(user_authorization),

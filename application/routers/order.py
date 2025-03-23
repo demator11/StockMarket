@@ -22,10 +22,10 @@ from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
 
-order_router = APIRouter()
+order_router = APIRouter(prefix="/api/v1/order")
 
 
-@order_router.post("/api/v1/order/", summary="Create Order")
+@order_router.post("/", summary="Create Order")
 async def create_order_response(
     new_order: CreateOrderBodyRequest,
     authorization: UUID = Depends(user_authorization),
@@ -41,7 +41,7 @@ async def create_order_response(
     return CreateOrderResponse(order_id=order.id)
 
 
-@order_router.get("/api/v1/order", summary="List Orders")
+@order_router.get("", summary="List Orders")
 async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
@@ -81,7 +81,7 @@ async def get_orders_list(
     return order_list
 
 
-@order_router.get("/api/v1/order/{order_id}", summary="Get Order")
+@order_router.get("/{order_id}", summary="Get Order")
 async def get_order_by_id(
     order_id: UUID,
     authorization: UUID = Depends(user_authorization),
@@ -115,7 +115,7 @@ async def get_order_by_id(
     )
 
 
-@order_router.delete("/api/v1/order/{order_id}", summary="Cancel Order")
+@order_router.delete("/{order_id}", summary="Cancel Order")
 async def cancel_order_by_id(
     order_id: UUID,
     authorization: UUID = Depends(user_authorization),

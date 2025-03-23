@@ -25,10 +25,10 @@ from application.token_management import (
 )
 
 
-admin_router = APIRouter()
+admin_router = APIRouter(prefix="/api/v1/admin")
 
 
-@admin_router.post("/api/v1/admin/instrument")
+@admin_router.post("/instrument")
 async def add_instrument(
     new_instrument: CreateInstrumentRequest,
     authorization: UUID = Depends(admin_authorization),
@@ -36,22 +36,22 @@ async def add_instrument(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
-    new_instrument = Instrument(
+    instrument = Instrument(
         name=new_instrument.name, ticker=new_instrument.ticker
     )
-    check_ticker = await instrument_repository.exists_in_database(
-        new_instrument.ticker
+    check_ticker_exists = await instrument_repository.exists_in_database(
+        instrument.ticker
     )
-    if check_ticker is not False:
+    if check_ticker_exists is True:
         raise HTTPException(status_code=400, detail="Тикер уже существует")
-    await instrument_repository.create(new_instrument)
+    await instrument_repository.create(instrument)
     return SuccessResponse()
 
 
-@admin_router.delete("/api/v1/admin/instrument/{ticker}")
+@admin_router.delete("/instrument/{ticker}")
 def delete_instrument(
     ticker: str,
-    authorization: Annotated[str | None, Header()] = None,
+    authorization: UUID = Depends(admin_authorization),
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
@@ -60,7 +60,7 @@ def delete_instrument(
     return SuccessResponse()
 
 
-@admin_router.post("/api/v1/admin")
+@admin_router.get("/")
 async def get_admin_role(
     authorization: UUID = Depends(user_authorization),
     user_repository: UserRepository = Depends(get_user_repository),
