@@ -7,7 +7,7 @@ from application.models.endpoint_models.user.create_user import (
     CreateUserRequest,
     CreateUserResponse,
 )
-from application.models.endpoint_models.orderbook import L2OrderBook
+from application.models.endpoint_models.order.orderbook import L2OrderBook
 from application.models.endpoint_models.transaction import Transaction
 from application.di.repositories import (
     get_user_repository,

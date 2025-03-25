@@ -7,16 +7,24 @@ from application.models.database_models.order import (
     UpdateOrder,
     OrderStatus,
 )
+from application.models.endpoint_models.order.get_order_list import (
+    LimitOrderListResponse,
+    LimitOrderBodyListResponse,
+    MarketOrderListResponse,
+    MarketOrderBodyListResponse,
+)
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
 from application.di.repositories import get_order_repository
-from application.models.endpoint_models.order import (
-    LimitOrderResponse,
+from application.models.endpoint_models.order.get_order_by_id import (
+    LimitOrderByIdResponse,
+    MarketOrderByIdResponse,
+    MarketOrderBodyByIdResponse,
+    LimitOrderBodyByIdResponse,
+)
+from application.models.endpoint_models.order.create_order import (
+    CreateOrderRequest,
     CreateOrderResponse,
-    MarketOrderResponse,
-    MarketOrderBodyResponse,
-    LimitOrderBodyResponse,
-    CreateOrderBodyRequest,
 )
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
@@ -26,8 +34,8 @@ order_router = APIRouter(prefix="/api/v1/order")
 
 
 @order_router.post("/", summary="Create Order")
-async def create_order_response(
-    new_order: CreateOrderBodyRequest,
+async def create_order(
+    new_order: CreateOrderRequest,
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> CreateOrderResponse:
@@ -45,17 +53,17 @@ async def create_order_response(
 async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
-) -> list[LimitOrderResponse | MarketOrderResponse]:
+) -> list[LimitOrderListResponse | MarketOrderListResponse]:
     result = await order_repository.get_all()
     order_list = []
     for order in result:
         if order.price is None:
             order_list.append(
-                MarketOrderResponse(
+                MarketOrderListResponse(
                     id=order.id,
                     status=order.status,
                     user_id=order.user_id,
-                    body=MarketOrderBodyResponse(
+                    body=MarketOrderBodyListResponse(
                         direction=order.direction,
                         ticker=order.ticker,
                         qty=order.qty,
@@ -64,11 +72,11 @@ async def get_orders_list(
             )
         else:
             order_list.append(
-                LimitOrderResponse(
+                LimitOrderListResponse(
                     id=order.id,
                     status=order.status,
                     user_id=order.user_id,
-                    body=LimitOrderBodyResponse(
+                    body=LimitOrderBodyListResponse(
                         direction=order.direction,
                         ticker=order.ticker,
                         qty=order.qty,
@@ -86,26 +94,26 @@ async def get_order_by_id(
     order_id: UUID,
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
-) -> LimitOrderResponse | MarketOrderResponse:
+) -> LimitOrderByIdResponse | MarketOrderByIdResponse:
     order = await order_repository.get_by_id(order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")
     if order.price is None:
-        return MarketOrderResponse(
+        return MarketOrderByIdResponse(
             id=order.id,
             status=order.status,
             user_id=order.user_id,
-            body=MarketOrderBodyResponse(
+            body=MarketOrderBodyByIdResponse(
                 direction=order.direction,
                 ticker=order.ticker,
                 qty=order.qty,
             ),
         )
-    return LimitOrderResponse(
+    return LimitOrderByIdResponse(
         id=order.id,
         status=order.status,
         user_id=order.user_id,
-        body=LimitOrderBodyResponse(
+        body=LimitOrderBodyByIdResponse(
             direction=order.direction,
             ticker=order.ticker,
             qty=order.qty,
