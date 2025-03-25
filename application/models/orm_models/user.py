@@ -13,4 +13,4 @@ class UserOrm(Base):
     )
     name: Mapped[str] = mapped_column(unique=True)
     role: Mapped[str] = mapped_column(default="USER", server_default="USER")
-    api_key: Mapped[str]
+    api_key: Mapped[str] = mapped_column(unique=True)

@@ -15,11 +15,11 @@ def get_database_url(
     )
 
 
-POSTGRESQL_USER = os.getenv("POSTGRESQL_USER")
-POSTGRESQL_HOST = os.getenv("POSTGRESQL_HOST")
-POSTGRESQL_PORT = os.getenv("POSTGRESQL_PORT")
-POSTGRESQL_PASS = os.getenv("POSTGRESQL_PASS")
-POSTGRESQL_NAME = os.getenv("POSTGRESQL_NAME")
+POSTGRESQL_USER = os.getenv("POSTGRESQL_USER", "postgres")
+POSTGRESQL_HOST = os.getenv("POSTGRESQL_HOST", "127.0.0.1")
+POSTGRESQL_PORT = os.getenv("POSTGRESQL_PORT", "5432")
+POSTGRESQL_PASS = os.getenv("POSTGRESQL_PASS", "postgres")
+POSTGRESQL_NAME = os.getenv("POSTGRESQL_NAME", "market")
 
 
 POSTGRESQL_URL = get_database_url(

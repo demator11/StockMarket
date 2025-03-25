@@ -13,4 +13,4 @@ class InstrumentOrm(Base):
         primary_key=True, default=uuid4, server_default=FetchedValue()
     )
     name: Mapped[str]
-    ticker: Mapped[str]
+    ticker: Mapped[str] = mapped_column(unique=True)
