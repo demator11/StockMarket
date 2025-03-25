@@ -1,6 +1,7 @@
+import asyncio
 from uuid import UUID
 
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.balance import BalanceOrm
@@ -13,33 +14,44 @@ class BalanceRepository:
         self.db_session = db_session
 
     async def upsert_user_deposit(self, deposit: Deposit) -> Balance:
-        check_ticker_exists = await self.db_session.scalars(
-            select(BalanceOrm)
-            .where(BalanceOrm.user_id == deposit.user_id)
-            .where(BalanceOrm.ticker == deposit.ticker)
-        )
-        ticker = check_ticker_exists.one_or_none()
-        if ticker is None:
-            result = await self.db_session.scalars(
-                insert(BalanceOrm)
-                .values(
-                    user_id=deposit.user_id,
-                    ticker=deposit.ticker,
-                    qty=deposit.qty,
-                )
-                .returning(BalanceOrm)
+        obtained_lock = False
+        try:
+            obtained_lock = await self.db_session.scalars(
+                select(func.pg_try_advisory_lock(123))
             )
-            return Balance.model_validate(result.one())
+            if obtained_lock:
+                check_ticker_exists = await self.db_session.scalars(
+                    select(BalanceOrm)
+                    .where(BalanceOrm.user_id == deposit.user_id)
+                    .where(BalanceOrm.ticker == deposit.ticker)
+                )
+                ticker = check_ticker_exists.one_or_none()
+                if ticker is None:
+                    result = await self.db_session.scalars(
+                        insert(BalanceOrm)
+                        .values(
+                            user_id=deposit.user_id,
+                            ticker=deposit.ticker,
+                            qty=deposit.qty,
+                        )
+                        .returning(BalanceOrm)
+                    )
+                    return Balance.model_validate(result.one())
 
-        result = await self.db_session.scalars(
-            update(BalanceOrm)
-            .values(qty=ticker.qty + deposit.qty)
-            .where(BalanceOrm.user_id == deposit.user_id)
-            .where(BalanceOrm.ticker == deposit.ticker)
-            .returning(BalanceOrm)
-        )
+                result = await self.db_session.scalars(
+                    update(BalanceOrm)
+                    .values(qty=ticker.qty + deposit.qty)
+                    .where(BalanceOrm.user_id == deposit.user_id)
+                    .where(BalanceOrm.ticker == deposit.ticker)
+                    .returning(BalanceOrm)
+                )
 
-        return Balance.model_validate(result.one())
+                return Balance.model_validate(result.one())
+        finally:
+            if obtained_lock:
+                await self.db_session.scalars(
+                    select(func.pg_advisory_unlock(123))
+                )
 
     async def get_user_by_id(self, user_id: UUID) -> list[Balance]:
         query = select(BalanceOrm).where(BalanceOrm.user_id == user_id)

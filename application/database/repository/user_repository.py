@@ -24,12 +24,10 @@ class UserRepository:
         result = await self.db_session.scalars(query)
         return result.one_or_none() is not None
 
-    async def get_by_api_key(self, api_key: str) -> User | None:
+    async def get_by_api_key(self, api_key: str) -> UserOrm | None:
         query = select(UserOrm).where(UserOrm.api_key == api_key)
         result = await self.db_session.scalars(query)
-        if result.one_or_none() is None:
-            return None
-        return User.model_validate(result)
+        return result.one_or_none()
 
     async def change_user_role(self, user_id: UUID, role: UserRole) -> None:
         await self.db_session.execute(
