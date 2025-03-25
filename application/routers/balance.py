@@ -24,12 +24,9 @@ balance_router = APIRouter(prefix="/api/v1/balance")
 async def get_balance(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
-):
+) -> dict:
     result = await balance_repository.get_user_by_id(authorization)
-    balance_dict = {}
-    for row in result:
-        balance_dict[row.ticker] = row.qty
-    return balance_dict
+    return {row.ticker: row.qty for row in result}
 
 
 @balance_router.post("/deposit", summary="Deposit")

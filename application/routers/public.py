@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
-from application.models.endpoint_models.intrument.get_list_instrument import (
+from application.models.endpoint_models.intrument.list_instrument import (
     InstrumentListResponse,
 )
 from application.models.endpoint_models.public.create_user import (
@@ -48,7 +48,7 @@ async def register_new_user(
 
 
 @public_router.get("/instrument", summary="List instruments")
-async def get_list_instrument(
+async def list_instrument(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
