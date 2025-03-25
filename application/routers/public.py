@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
-from application.models.endpoint_models.instrument import InstrumentResponse
+from application.models.endpoint_models.intrument.get_list_instrument import (
+    InstrumentListResponse,
+)
 from application.models.endpoint_models.user import (
     CreateUserRequest,
     UserResponse,
@@ -48,12 +50,14 @@ async def get_list_instrument(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
-) -> list[InstrumentResponse]:
+) -> list[InstrumentListResponse]:
     result = await instrument_repository.get_all()
     instrument_list = []
     for instrument in result:
         instrument_list.append(
-            InstrumentResponse(name=instrument.name, ticker=instrument.ticker)
+            InstrumentListResponse(
+                name=instrument.name, ticker=instrument.ticker
+            )
         )
     return instrument_list
 

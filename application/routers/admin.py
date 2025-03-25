@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends
 
 from application.models.database_models.user import UserRole
-from application.models.endpoint_models.instrument import (
+from application.models.endpoint_models.intrument.create_instrument import (
     CreateInstrumentRequest,
 )
 from application.models.endpoint_models.success_response import (
