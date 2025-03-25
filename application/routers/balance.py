@@ -5,10 +5,10 @@ from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
 from application.models.endpoint_models.body_deposit import (
-    CreateBodyDepositRequest,
+    CreateDepositRequest,
 )
 from application.models.endpoint_models.body_withdraw import (
-    CreateBodyWithdrawRequest,
+    CreateWithdrawRequest,
 )
 from application.models.database_models.deposit import NewDeposit, Deposit
 from application.token_management import user_authorization
@@ -34,7 +34,7 @@ async def get_balance(
 
 @balance_router.post("/deposit", summary="Deposit")
 async def deposit_balance(
-    deposit: CreateBodyDepositRequest,
+    deposit: CreateDepositRequest,
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
@@ -47,7 +47,7 @@ async def deposit_balance(
 
 @balance_router.post("/withdraw", summary="Withdraw")
 def create_withdraw(
-    body: CreateBodyWithdrawRequest,
+    body: CreateWithdrawRequest,
     authorization: UUID = Depends(user_authorization),
 ) -> SuccessResponse:
     # пытаемся вывести коины с баланса юзера
