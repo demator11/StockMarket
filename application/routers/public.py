@@ -3,9 +3,9 @@ from fastapi import APIRouter, HTTPException, Response, Depends
 from application.models.endpoint_models.intrument.get_list_instrument import (
     InstrumentListResponse,
 )
-from application.models.endpoint_models.user import (
+from application.models.endpoint_models.user.create_user import (
     CreateUserRequest,
-    UserResponse,
+    CreateUserResponse,
 )
 from application.models.endpoint_models.orderbook import L2OrderBook
 from application.models.endpoint_models.transaction import Transaction
@@ -28,7 +28,7 @@ async def register_new_user(
     new_user: CreateUserRequest,
     response: Response,
     user_repository: UserRepository = Depends(get_user_repository),
-):
+) -> CreateUserResponse:
     user_exists = await user_repository.exists_in_database(new_user.name)
     if user_exists:
         raise HTTPException(
@@ -40,7 +40,7 @@ async def register_new_user(
     user = await user_repository.create(new_user)
     response.headers["Authorization"] = "TOKEN " + api_key
 
-    return UserResponse(
+    return CreateUserResponse(
         id=user.id, name=user.name, role=user.role, api_key=user.api_key
     )
 

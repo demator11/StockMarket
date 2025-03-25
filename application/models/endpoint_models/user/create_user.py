@@ -9,7 +9,7 @@ class CreateUserRequest(BaseModel):
     name: str = Field(min_length=3)
 
 
-class UserResponse(BaseModel):
+class CreateUserResponse(BaseModel):
     id: UUID
     name: str
     role: UserRole = UserRole.user
