@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
 
+from application.models.database_models.balance import Balance
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
@@ -35,10 +36,10 @@ async def deposit_balance(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
-    deposit = Deposit(
+    deposit = Balance(
         user_id=authorization, ticker=deposit.ticker, qty=deposit.amount
     )
-    await balance_repository.upsert_user_deposit(deposit)
+    await balance_repository.upsert(deposit)
     return SuccessResponse()
 
 

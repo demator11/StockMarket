@@ -1,4 +1,3 @@
-import asyncio
 from uuid import UUID
 
 from sqlalchemy import select, insert, update, func
@@ -6,14 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.balance import BalanceOrm
 from application.models.database_models.balance import Balance
-from application.models.database_models.deposit import Deposit
 
 
 class BalanceRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def upsert_user_deposit(self, deposit: Deposit) -> Balance:
+    async def upsert(self, deposit: Balance) -> Balance:
         obtained_lock = False
         try:
             obtained_lock = await self.db_session.scalars(
