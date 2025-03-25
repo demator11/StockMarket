@@ -12,7 +12,7 @@ class BalanceRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_or_update_user_deposit(self, deposit: NewDeposit) -> None:
+    async def upsert_user_deposit(self, deposit: NewDeposit) -> Balance:
         check_ticker_exists = await self.db_session.scalars(
             select(BalanceOrm)
             .where(BalanceOrm.user_id == deposit.user_id)
@@ -20,7 +20,7 @@ class BalanceRepository:
         )
         ticker = check_ticker_exists.one_or_none()
         if ticker is None:
-            await self.db_session.scalars(
+            result = await self.db_session.scalars(
                 insert(BalanceOrm)
                 .values(
                     user_id=deposit.user_id,
@@ -29,14 +29,17 @@ class BalanceRepository:
                 )
                 .returning(BalanceOrm)
             )
-        else:
-            await self.db_session.scalars(
-                update(BalanceOrm)
-                .values(qty=ticker.qty + deposit.qty)
-                .where(BalanceOrm.user_id == deposit.user_id)
-                .where(BalanceOrm.ticker == deposit.ticker)
-                .returning(BalanceOrm)
-            )
+            return Balance.model_validate(result.one())
+
+        result = await self.db_session.scalars(
+            update(BalanceOrm)
+            .values(qty=ticker.qty + deposit.qty)
+            .where(BalanceOrm.user_id == deposit.user_id)
+            .where(BalanceOrm.ticker == deposit.ticker)
+            .returning(BalanceOrm)
+        )
+
+        return Balance.model_validate(result.one())
 
     async def get_user_by_id(self, user_id: UUID) -> list[Balance] | None:
         query = select(BalanceOrm).where(BalanceOrm.user_id == user_id)

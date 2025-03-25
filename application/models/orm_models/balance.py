@@ -1,5 +1,5 @@
 from uuid import UUID, uuid4
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import FetchedValue
 
@@ -17,4 +17,4 @@ class BalanceOrm(Base):
         index=True,
     )
     ticker: Mapped[str] = mapped_column(index=True)
-    qty: Mapped[int]
+    qty: Mapped[int] = mapped_column(CheckConstraint("qty>0"))

@@ -33,7 +33,7 @@ class LimitOrderResponse(BaseModel):
     id: UUID
     status: OrderStatus
     user_id: UUID
-    body: LimitOrderBodyRequest
+    body: LimitOrderBodyResponse
     filled: int = 0
 
 
@@ -53,7 +53,7 @@ class MarketOrderResponse(BaseModel):
     id: UUID
     status: OrderStatus
     user_id: UUID
-    body: MarketOrderBodyRequest
+    body: MarketOrderBodyResponse
 
 
 class CreateOrderResponse(BaseModel):

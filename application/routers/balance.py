@@ -35,7 +35,7 @@ async def get_balance(
 
 
 @balance_router.post("/deposit", summary="Deposit")
-async def create_deposit(
+async def deposit_balance(
     deposit: CreateBodyDepositRequest,
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
@@ -43,7 +43,7 @@ async def create_deposit(
     deposit = NewDeposit(
         user_id=authorization, ticker=deposit.ticker, qty=deposit.amount
     )
-    await balance_repository.create_or_update_user_deposit(deposit)
+    await balance_repository.upsert_user_deposit(deposit)
     return SuccessResponse()
 
 

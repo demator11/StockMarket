@@ -33,8 +33,6 @@ class InstrumentRepository:
         return [Instrument.model_validate(row) for row in result.all()]
 
     async def delete(self, ticker: str) -> None:
-        await self.db_session.scalars(
-            delete(InstrumentOrm)
-            .where(InstrumentOrm.ticker == ticker)
-            .returning(InstrumentOrm)
+        await self.db_session.execute(
+            delete(InstrumentOrm).where(InstrumentOrm.ticker == ticker)
         )
