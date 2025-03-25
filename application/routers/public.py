@@ -15,7 +15,7 @@ from application.database.repository.user_repository import UserRepository
 from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
-from application.models.database_models.user import NewUser
+from application.models.database_models.user import User
 from application.token_management import create_access_token
 
 public_router = APIRouter(prefix="/api/v1/public")
@@ -27,7 +27,6 @@ async def register_new_user(
     response: Response,
     user_repository: UserRepository = Depends(get_user_repository),
 ):
-    new_user = NewUser(name=new_user.name)
     user_exists = await user_repository.exists_in_database(new_user.name)
     if user_exists:
         raise HTTPException(
@@ -35,7 +34,8 @@ async def register_new_user(
         )
 
     api_key = create_access_token({"sub": new_user.name})
-    user = await user_repository.create(new_user, api_key)
+    new_user = User(name=new_user.name, api_key=api_key)
+    user = await user_repository.create(new_user)
     response.headers["Authorization"] = "TOKEN " + api_key
 
     return UserResponse(

@@ -1,5 +1,8 @@
+import uuid
 from enum import StrEnum
 from uuid import UUID
+
+from pydantic import Field
 
 from application.models.base import ModelBase
 
@@ -9,12 +12,8 @@ class UserRole(StrEnum):
     admin = "ADMIN"
 
 
-class NewUser(ModelBase):
-    name: str
-
-
 class User(ModelBase):
-    id: UUID
+    id: UUID = Field(default_factory=uuid.uuid4)
     name: str
     role: UserRole = UserRole.user
     api_key: str

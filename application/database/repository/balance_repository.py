@@ -5,14 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.balance import BalanceOrm
 from application.models.database_models.balance import Balance
-from application.models.database_models.deposit import NewDeposit
+from application.models.database_models.deposit import NewDeposit, Deposit
 
 
 class BalanceRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def upsert_user_deposit(self, deposit: NewDeposit) -> Balance:
+    async def upsert_user_deposit(self, deposit: Deposit) -> Balance:
         check_ticker_exists = await self.db_session.scalars(
             select(BalanceOrm)
             .where(BalanceOrm.user_id == deposit.user_id)
@@ -41,9 +41,9 @@ class BalanceRepository:
 
         return Balance.model_validate(result.one())
 
-    async def get_user_by_id(self, user_id: UUID) -> list[Balance] | None:
+    async def get_user_by_id(self, user_id: UUID) -> list[Balance]:
         query = select(BalanceOrm).where(BalanceOrm.user_id == user_id)
-        result = await self.db_session.execute(query)
+        result = await self.db_session.scalars(query)
         if result is None:
-            return None
-        return [Balance.model_validate(row) for row in result.scalars().all()]
+            return []
+        return [Balance.model_validate(row) for row in result.all()]

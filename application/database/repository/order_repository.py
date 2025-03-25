@@ -34,10 +34,8 @@ class OrderRepository:
 
     async def get_all(self) -> list[Order]:
         query = select(OrderOrm)
-        result = await self.db_session.execute(query)
-        order_list = [
-            Order.from_orm(order) for order in result.scalars().all()
-        ]
+        result = await self.db_session.scalars(query)
+        order_list = [Order.from_orm(order) for order in result.all()]
         return order_list
 
     async def get_by_id(self, order_id: UUID) -> Order | None:
