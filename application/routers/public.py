@@ -3,12 +3,14 @@ from fastapi import APIRouter, HTTPException, Response, Depends
 from application.models.endpoint_models.intrument.get_list_instrument import (
     InstrumentListResponse,
 )
-from application.models.endpoint_models.user.create_user import (
+from application.models.endpoint_models.public.create_user import (
     CreateUserRequest,
     CreateUserResponse,
 )
 from application.models.endpoint_models.order.orderbook import L2OrderBook
-from application.models.endpoint_models.transaction import Transaction
+from application.models.endpoint_models.public.get_transaction_history import (
+    Transaction,
+)
 from application.di.repositories import (
     get_user_repository,
     get_instrument_repository,
