@@ -1,7 +1,12 @@
+from enum import StrEnum
 from uuid import UUID
 
-from application.models.enum_models.user import UserRole
 from application.models.base import ModelBase
+
+
+class UserRole(StrEnum):
+    user = "USER"
+    admin = "ADMIN"
 
 
 class NewUser(ModelBase):

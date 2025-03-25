@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from application.models.database_models.order import (
     OrderBody,
     UpdateOrder,
+    OrderStatus,
 )
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
@@ -17,7 +18,6 @@ from application.models.endpoint_models.order import (
     LimitOrderBodyResponse,
     CreateOrderBodyRequest,
 )
-from application.models.enum_models.order import OrderStatus
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )

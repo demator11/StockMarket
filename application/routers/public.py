@@ -5,7 +5,6 @@ from application.models.endpoint_models.user import (
     CreateUserRequest,
     UserResponse,
 )
-from application.models.database_models.instrument import Instrument
 from application.models.endpoint_models.orderbook import L2OrderBook
 from application.models.endpoint_models.transaction import Transaction
 from application.di.repositories import (

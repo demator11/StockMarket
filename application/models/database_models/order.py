@@ -1,9 +1,21 @@
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import Field
 
 from application.models.base import ModelBase
-from application.models.enum_models.order import OrderDirection, OrderStatus
+
+
+class OrderDirection(StrEnum):
+    buy = "BUY"
+    sell = "SELL"
+
+
+class OrderStatus(StrEnum):
+    new = "NEW"
+    executed = "EXECUTED"
+    partially_executed = "PARTIALLY_EXECUTED"
+    cancelled = "CANCELLED"
 
 
 class UpdateOrder(ModelBase):

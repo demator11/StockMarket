@@ -1,9 +1,8 @@
 from uuid import UUID
 
-from typing import Annotated
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 
-from application.models.enum_models.user import UserRole
+from application.models.database_models.user import UserRole
 from application.models.endpoint_models.instrument import (
     CreateInstrumentRequest,
 )

@@ -3,12 +3,13 @@ from uuid import UUID
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.enum_models.order import OrderDirection, OrderStatus
 from application.models.orm_models.order import OrderOrm
 from application.models.database_models.order import (
     Order,
     OrderBody,
     UpdateOrder,
+    OrderDirection,
+    OrderStatus,
 )
 
 

@@ -2,7 +2,10 @@ from uuid import UUID
 
 from pydantic import Field, BaseModel
 
-from application.models.enum_models.order import OrderDirection, OrderStatus
+from application.models.database_models.order import (
+    OrderDirection,
+    OrderStatus,
+)
 
 
 class CreateOrderBodyRequest(BaseModel):
