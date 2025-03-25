@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
-from application.models.endpoint_models.body_deposit import (
-    CreateDepositRequest,
+from application.models.endpoint_models.balance.deposit_balance import (
+    DepositBalanceRequest,
 )
-from application.models.endpoint_models.body_withdraw import (
-    CreateWithdrawRequest,
+from application.models.endpoint_models.balance.withdraw_balance import (
+    WithdrawBalanceRequest,
 )
-from application.models.database_models.deposit import NewDeposit, Deposit
+from application.models.database_models.deposit import Deposit
 from application.token_management import user_authorization
 from application.database.repository.balance_repository import (
     BalanceRepository,
@@ -34,7 +34,7 @@ async def get_balance(
 
 @balance_router.post("/deposit", summary="Deposit")
 async def deposit_balance(
-    deposit: CreateDepositRequest,
+    deposit: DepositBalanceRequest,
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
@@ -46,8 +46,8 @@ async def deposit_balance(
 
 
 @balance_router.post("/withdraw", summary="Withdraw")
-def create_withdraw(
-    body: CreateWithdrawRequest,
+def withdraw_balance(
+    body: WithdrawBalanceRequest,
     authorization: UUID = Depends(user_authorization),
 ) -> SuccessResponse:
     # пытаемся вывести коины с баланса юзера
