@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select, insert, update, func
+from sqlalchemy import select, insert, update, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.balance import BalanceOrm
@@ -14,12 +14,12 @@ class BalanceRepository:
     async def upsert(self, deposit: Balance) -> Balance:
         try:
             await self.db_session.execute(select(func.pg_advisory_lock(123)))
-            check_ticker_exists = await self.db_session.scalars(
+            ticker_exists = await self.db_session.scalars(
                 select(BalanceOrm)
                 .where(BalanceOrm.user_id == deposit.user_id)
                 .where(BalanceOrm.ticker == deposit.ticker)
             )
-            ticker = check_ticker_exists.one_or_none()
+            ticker = ticker_exists.one_or_none()
             if ticker is None:
                 result = await self.db_session.scalars(
                     insert(BalanceOrm)
@@ -50,3 +50,29 @@ class BalanceRepository:
         if result is None:
             return []
         return [Balance.model_validate(row) for row in result.all()]
+
+    async def delete_or_update(self, withdraw: Balance) -> Balance | None:
+        ticker_exists = await self.db_session.scalars(
+            select(BalanceOrm)
+            .where(BalanceOrm.user_id == withdraw.user_id)
+            .where(BalanceOrm.ticker == withdraw.ticker)
+        )
+        ticker = ticker_exists.one_or_none()
+        if ticker is None:
+            return None
+        elif ticker.qty < withdraw.qty:
+            result = await self.db_session.scalars(
+                delete(BalanceOrm)
+                .where(BalanceOrm.user_id == withdraw.user_id)
+                .where(BalanceOrm.ticker == withdraw.ticker)
+                .returning(BalanceOrm)
+            )
+            return Balance.model_validate(result.one())
+        result = await self.db_session.scalars(
+            update(BalanceOrm)
+            .values(qty=BalanceOrm.qty - withdraw.qty)
+            .where(BalanceOrm.user_id == withdraw.user_id)
+            .where(BalanceOrm.ticker == withdraw.ticker)
+            .returning(BalanceOrm)
+        )
+        return Balance.model_validate(result.one())

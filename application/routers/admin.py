@@ -17,7 +17,7 @@ from application.models.endpoint_models.balance.deposit_balance import (
     DepositUserBalanceRequest,
 )
 from application.models.endpoint_models.balance.withdraw_balance import (
-    WithdrawBalanceRequest,
+    WithdrawUserBalanceRequest,
 )
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
@@ -95,24 +95,36 @@ async def delete_instrument(
 
 
 @admin_router.post("/balance/deposit", summary="Deposit")
-async def deposit_balance(
-    deposit: DepositUserBalanceRequest,
+async def deposit_user_balance(
+    deposit_request: DepositUserBalanceRequest,
     authorization: UUID = Depends(admin_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
     deposit = Balance(
-        user_id=deposit.user_id, ticker=deposit.ticker, qty=deposit.amount
+        user_id=deposit_request.user_id,
+        ticker=deposit_request.ticker,
+        qty=deposit_request.amount,
     )
     await balance_repository.upsert(deposit)
     return SuccessResponse()
 
 
 @admin_router.post("/balance/withdraw", summary="Withdraw")
-def withdraw_balance(
-    body: WithdrawBalanceRequest,
+async def withdraw_user_balance(
+    withdraw_request: WithdrawUserBalanceRequest,
     authorization: UUID = Depends(admin_authorization),
+    balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> SuccessResponse:
-    # пытаемся вывести коины с баланса юзера
+    withdraw = Balance(
+        user_id=withdraw_request.user_id,
+        ticker=withdraw_request.ticker,
+        qty=withdraw_request.amount,
+    )
+    result = await balance_repository.delete_or_update(withdraw)
+    if result is None:
+        raise HTTPException(
+            status_code=400, detail="У пользователя отсутствует данный тикер"
+        )
     return SuccessResponse()
 
 
