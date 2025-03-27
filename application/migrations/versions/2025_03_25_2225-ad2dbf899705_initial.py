@@ -93,7 +93,6 @@ def upgrade() -> None:
             ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("ticker"),
     )
     op.create_index(
         op.f("ix_orders_user_id"), "orders", ["user_id"], unique=False

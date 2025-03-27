@@ -1,5 +1,15 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
+from application.database.repository.order_repository import OrderRepository
+from application.models.database_models.order import (
+    OrderStatus,
+    OrderDirection,
+    Orderbook,
+)
+from application.models.endpoint_models.public.get_orderbook import (
+    GetOrderbookResponse,
+    LevelResponse,
+)
 from application.models.endpoint_models.public.list_instrument import (
     InstrumentListResponse,
 )
@@ -7,13 +17,13 @@ from application.models.endpoint_models.public.create_user import (
     CreateUserRequest,
     CreateUserResponse,
 )
-from application.models.endpoint_models.order.orderbook import L2OrderBook
 from application.models.endpoint_models.public.get_transaction_history import (
     Transaction,
 )
 from application.di.repositories import (
     get_user_repository,
     get_instrument_repository,
+    get_order_repository,
 )
 from application.database.repository.user_repository import UserRepository
 from application.database.repository.instrument_repository import (
@@ -65,12 +75,29 @@ async def list_instrument(
 
 
 @public_router.get("/orderbook/{ticker}", summary="Get Orderbook")
-def get_orderbook(ticker: str, qty: int = 10) -> L2OrderBook:
-    # достаем список из qty бидов и асков по нужному ticker
-    bid_levels = [{"price": 1, "qty": 1}, {"price": 2, "qty": 2}]
-    ask_levels = [{"price": 3, "qty": 3}, {"price": 4, "qty": 4}]
-    result = L2OrderBook(bid_levels=bid_levels, ask_levels=ask_levels)
-    return result
+async def get_orderbook(
+    ticker: str,
+    limit: int = 10,
+    order_repository: OrderRepository = Depends(get_order_repository),
+) -> GetOrderbookResponse:
+    if limit <= 0:
+        limit = 10
+    orders = await order_repository.get_by_ticker(
+        Orderbook(ticker=ticker, limit=limit)
+    )
+    bid_levels, ask_levels = [], []
+    for order in orders:
+        if (
+            order.status == OrderStatus.cancelled
+            or order.status == OrderStatus.executed
+        ):
+            continue
+        if order.direction == OrderDirection.sell:
+            ask_levels.append(LevelResponse(price=order.price, qty=order.qty))
+        else:
+            bid_levels.append(LevelResponse(price=order.price, qty=order.qty))
+
+    return GetOrderbookResponse(ask_levels=ask_levels, bid_levels=bid_levels)
 
 
 @public_router.get("/transactions/{ticker}", summary="Get Transaction History")

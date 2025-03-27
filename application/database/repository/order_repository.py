@@ -9,6 +9,7 @@ from application.models.database_models.order import (
     UpdateOrder,
     OrderDirection,
     OrderStatus,
+    Orderbook,
 )
 
 
@@ -32,8 +33,7 @@ class OrderRepository:
         return Order.model_validate(result.one())
 
     async def get_all(self) -> list[Order]:
-        query = select(OrderOrm)
-        result = await self.db_session.scalars(query)
+        result = await self.db_session.scalars(select(OrderOrm))
         order_list = [Order.from_orm(order) for order in result.all()]
         return order_list
 
@@ -42,6 +42,15 @@ class OrderRepository:
         if not result:
             return None
         return Order.model_validate(result)
+
+    async def get_by_ticker(self, orderbook: Orderbook) -> list[Order]:
+        result = await self.db_session.scalars(
+            select(OrderOrm)
+            .where(OrderOrm.ticker == orderbook.ticker)
+            .limit(orderbook.limit)
+        )
+        order_list = [Order.from_orm(order) for order in result.all()]
+        return order_list
 
     async def update(self, params: UpdateOrder) -> None:
         update_values = params.dict(exclude_unset=True, exclude={"id"})

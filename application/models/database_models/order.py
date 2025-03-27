@@ -39,3 +39,8 @@ class Order(ModelBase):
     qty: int
     price: int | None
     filled: int = 0
+
+
+class Orderbook(ModelBase):
+    ticker: str
+    limit: int
