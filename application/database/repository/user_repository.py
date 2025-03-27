@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.user import UserOrm
@@ -33,3 +33,11 @@ class UserRepository:
         await self.db_session.execute(
             update(UserOrm).where(UserOrm.id == user_id).values(role=role)
         )
+
+    async def delete(self, user_id: UUID) -> User | None:
+        result = await self.db_session.scalars(
+            delete(UserOrm).where(UserOrm.id == user_id).returning(UserOrm)
+        )
+        if result.one_or_none() is None:
+            return None
+        return User.model_validate(result)

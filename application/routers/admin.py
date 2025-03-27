@@ -7,14 +7,17 @@ from application.database.repository.balance_repository import (
 )
 from application.models.database_models.balance import Balance
 from application.models.database_models.user import UserRole
+from application.models.endpoint_models.admin.create_instrument import (
+    CreateInstrumentRequest,
+)
+from application.models.endpoint_models.admin.delete_user import (
+    DeleteUserResponse,
+)
 from application.models.endpoint_models.balance.deposit_balance import (
     DepositUserBalanceRequest,
 )
 from application.models.endpoint_models.balance.withdraw_balance import (
     WithdrawBalanceRequest,
-)
-from application.models.endpoint_models.intrument.create_instrument import (
-    CreateInstrumentRequest,
 )
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
@@ -38,8 +41,25 @@ from application.token_management import (
 admin_router = APIRouter(prefix="/api/v1/admin")
 
 
+@admin_router.delete("/user/{user_id}")
+async def delete_user(
+    user_id: UUID,
+    authorization: UUID = Depends(admin_authorization),
+    user_repository: UserRepository = Depends(get_user_repository),
+) -> DeleteUserResponse:
+    deleted_user = await user_repository.delete(user_id)
+    if deleted_user is None:
+        raise HTTPException(status_code=400, detail="Пользователь не найден")
+    return DeleteUserResponse(
+        id=deleted_user.id,
+        name=deleted_user.name,
+        role=deleted_user.role,
+        api_key=deleted_user.api_key,
+    )
+
+
 @admin_router.post("/instrument")
-async def add_instrument(
+async def create_instrument(
     new_instrument: CreateInstrumentRequest,
     authorization: UUID = Depends(admin_authorization),
     instrument_repository: InstrumentRepository = Depends(

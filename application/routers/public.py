@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
-from application.models.endpoint_models.intrument.list_instrument import (
+from application.models.endpoint_models.public.list_instrument import (
     InstrumentListResponse,
 )
 from application.models.endpoint_models.public.create_user import (

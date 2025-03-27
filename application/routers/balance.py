@@ -1,17 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
 
-from application.models.database_models.balance import Balance
-from application.models.endpoint_models.success_response import (
-    SuccessResponse,
-)
-from application.models.endpoint_models.balance.deposit_balance import (
-    DepositUserBalanceRequest,
-)
-from application.models.endpoint_models.balance.withdraw_balance import (
-    WithdrawBalanceRequest,
-)
-from application.models.database_models.deposit import Deposit
 from application.token_management import user_authorization
 from application.database.repository.balance_repository import (
     BalanceRepository,
