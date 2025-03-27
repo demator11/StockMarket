@@ -2,7 +2,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
+from application.database.repository.balance_repository import (
+    BalanceRepository,
+)
+from application.models.database_models.balance import Balance
 from application.models.database_models.user import UserRole
+from application.models.endpoint_models.balance.deposit_balance import (
+    DepositUserBalanceRequest,
+)
+from application.models.endpoint_models.balance.withdraw_balance import (
+    WithdrawBalanceRequest,
+)
 from application.models.endpoint_models.intrument.create_instrument import (
     CreateInstrumentRequest,
 )
@@ -16,6 +26,7 @@ from application.database.repository.instrument_repository import (
 from application.di.repositories import (
     get_instrument_repository,
     get_user_repository,
+    get_balance_repository,
 )
 from application.models.database_models.instrument import Instrument
 from application.token_management import (
@@ -55,13 +66,33 @@ async def delete_instrument(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
-    check_ticker_exists = await instrument_repository.exists_in_database(
-        ticker
-    )
-    if check_ticker_exists is False:
+    ticker_exists = await instrument_repository.exists_in_database(ticker)
+    if not ticker_exists:
         raise HTTPException(status_code=404, detail="Тикер не найден")
 
     await instrument_repository.delete(ticker)
+    return SuccessResponse()
+
+
+@admin_router.post("/balance/deposit", summary="Deposit")
+async def deposit_balance(
+    deposit: DepositUserBalanceRequest,
+    authorization: UUID = Depends(admin_authorization),
+    balance_repository: BalanceRepository = Depends(get_balance_repository),
+) -> SuccessResponse:
+    deposit = Balance(
+        user_id=deposit.user_id, ticker=deposit.ticker, qty=deposit.amount
+    )
+    await balance_repository.upsert(deposit)
+    return SuccessResponse()
+
+
+@admin_router.post("/balance/withdraw", summary="Withdraw")
+def withdraw_balance(
+    body: WithdrawBalanceRequest,
+    authorization: UUID = Depends(admin_authorization),
+) -> SuccessResponse:
+    # пытаемся вывести коины с баланса юзера
     return SuccessResponse()
 
 
