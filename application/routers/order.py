@@ -3,9 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends
 
 from application.models.database_models.order import (
-    OrderBody,
     UpdateOrder,
     OrderStatus,
+    Order,
 )
 from application.models.endpoint_models.order.get_order_list import (
     LimitOrderListResponse,
@@ -39,13 +39,15 @@ async def create_order(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> CreateOrderResponse:
-    order_body = OrderBody(
+    order_body = Order(
+        status=OrderStatus.new,
+        user_id=authorization,
         direction=new_order.direction,
         ticker=new_order.ticker,
         qty=new_order.qty,
         price=new_order.price,
     )
-    order = await order_repository.create(authorization, order_body)
+    order = await order_repository.create(order_body)
     return CreateOrderResponse(order_id=order.id)
 
 

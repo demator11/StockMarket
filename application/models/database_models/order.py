@@ -1,3 +1,4 @@
+import uuid
 from enum import StrEnum
 from uuid import UUID
 
@@ -30,7 +31,7 @@ class UpdateOrder(ModelBase):
 
 
 class Order(ModelBase):
-    id: UUID
+    id: UUID = Field(default_factory=uuid.uuid4)
     status: OrderStatus
     user_id: UUID
     direction: OrderDirection
@@ -38,10 +39,3 @@ class Order(ModelBase):
     qty: int
     price: int | None
     filled: int = 0
-
-
-class OrderBody(ModelBase):
-    direction: OrderDirection
-    ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
-    qty: int = Field(ge=1)
-    price: int = Field(gt=0, default=None)

@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from application.models.orm_models.order import OrderOrm
 from application.models.database_models.order import (
     Order,
-    OrderBody,
     UpdateOrder,
     OrderDirection,
     OrderStatus,
@@ -17,12 +16,12 @@ class OrderRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create(self, user_id: UUID, order: OrderBody) -> Order:
+    async def create(self, order: Order) -> Order:
         result = await self.db_session.scalars(
             insert(OrderOrm)
             .values(
-                status=OrderStatus.new,
-                user_id=user_id,
+                status=OrderStatus(order.status),
+                user_id=order.user_id,
                 direction=OrderDirection(order.direction),
                 ticker=order.ticker,
                 qty=order.qty,
