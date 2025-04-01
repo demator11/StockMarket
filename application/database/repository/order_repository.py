@@ -34,7 +34,7 @@ class OrderRepository:
 
     async def get_all(self) -> list[Order]:
         result = await self.db_session.scalars(select(OrderOrm))
-        order_list = [Order.from_orm(order) for order in result.all()]
+        order_list = [Order.model_validate(order) for order in result.all()]
         return order_list
 
     async def get_by_id(self, order_id: UUID) -> Order | None:
@@ -49,14 +49,13 @@ class OrderRepository:
             .where(OrderOrm.ticker == orderbook.ticker)
             .limit(orderbook.limit)
         )
-        order_list = [Order.from_orm(order) for order in result.all()]
+        order_list = [Order.model_validate(order) for order in result.all()]
         return order_list
 
     async def update(self, params: UpdateOrder) -> None:
         update_values = params.dict(exclude_unset=True, exclude={"id"})
-        await self.db_session.scalars(
+        await self.db_session.execute(
             update(OrderOrm)
             .where(OrderOrm.id == params.id)
             .values(**update_values)
-            .returning(OrderOrm)
         )

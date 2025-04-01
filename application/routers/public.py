@@ -1,14 +1,21 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 
 from application.database.repository.order_repository import OrderRepository
+from application.database.repository.transaction_repository import (
+    TransactionRepository,
+)
 from application.models.database_models.order import (
     OrderStatus,
     OrderDirection,
     Orderbook,
 )
+from application.models.database_models.transaction import Transaction
 from application.models.endpoint_models.public.get_orderbook import (
     GetOrderbookResponse,
     LevelResponse,
+)
+from application.models.endpoint_models.public.get_transaction_history import (
+    GetTransactionHistoryResponse,
 )
 from application.models.endpoint_models.public.list_instrument import (
     InstrumentListResponse,
@@ -17,13 +24,11 @@ from application.models.endpoint_models.public.create_user import (
     CreateUserRequest,
     CreateUserResponse,
 )
-from application.models.endpoint_models.public.get_transaction_history import (
-    Transaction,
-)
 from application.di.repositories import (
     get_user_repository,
     get_instrument_repository,
     get_order_repository,
+    get_transaction_repository,
 )
 from application.database.repository.user_repository import UserRepository
 from application.database.repository.instrument_repository import (
@@ -101,15 +106,26 @@ async def get_orderbook(
 
 
 @public_router.get("/transactions/{ticker}", summary="Get Transaction History")
-def get_transaction_history(ticker: str, limit: int = 10) -> list[Transaction]:
-    # получаем до limit транзакций по нужному ticker
-    result = []
-    result.append(
-        Transaction(
-            ticker=ticker,
-            amount=1,
-            price=2,
-            timestamp="2025-03-10T08:51:47.755Z",
-        )
+async def get_transaction_history(
+    ticker: str,
+    limit: int = 10,
+    transaction_repository: TransactionRepository = Depends(
+        get_transaction_repository
+    ),
+) -> list[GetTransactionHistoryResponse]:
+    await transaction_repository.create(
+        Transaction(ticker=ticker, qty=limit, price=100)
     )
+    transactions = await transaction_repository.get(ticker, limit)
+    result = []
+    for transaction in transactions:
+        result.append(
+            GetTransactionHistoryResponse(
+                id=transaction.id,
+                ticker=transaction.ticker,
+                qty=transaction.qty,
+                price=transaction.price,
+                timestamp=transaction.timestamp,
+            )
+        )
     return result

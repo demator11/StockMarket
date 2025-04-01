@@ -32,4 +32,26 @@ POSTGRESQL_URL = get_database_url(
 
 POSTGRESQL_ECHO = bool(os.getenv("POSTGRESQL_ECHO"))
 
+
+def get_rabbitmq_url(
+    mq_host: str,
+    mq_port: str,
+    mq_login: str,
+    mq_pass: str,
+) -> str:
+    return f"amqp://{mq_login}:{mq_pass}@{mq_host}:{mq_port}/"
+
+
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT = os.getenv("RABBITMQ_PORT", "5672")
+RABBITMQ_LOGIN = os.getenv("RABBITMQ_LOGIN", "guest")
+RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
+
+RABBITMQ_URL = get_rabbitmq_url(
+    mq_host=RABBITMQ_HOST,
+    mq_port=POSTGRESQL_PORT,
+    mq_login=RABBITMQ_LOGIN,
+    mq_pass=RABBITMQ_PASS,
+)
+
 JWT_SECRET_KEY = os.getenv("SECRET_KEY")
