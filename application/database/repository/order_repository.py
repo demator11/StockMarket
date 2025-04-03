@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import insert, select, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.order import OrderOrm
@@ -9,7 +9,7 @@ from application.models.database_models.order import (
     UpdateOrder,
     OrderDirection,
     OrderStatus,
-    Orderbook,
+    Ticker,
 )
 
 
@@ -43,12 +43,29 @@ class OrderRepository:
             return None
         return Order.model_validate(result)
 
-    async def get_by_ticker(self, orderbook: Orderbook) -> list[Order]:
-        result = await self.db_session.scalars(
-            select(OrderOrm)
-            .where(OrderOrm.ticker == orderbook.ticker)
-            .limit(orderbook.limit)
-        )
+    async def get_by_ticker(
+        self, ticker: Ticker, direction: OrderDirection | None = None
+    ) -> list[Order]:
+        if direction is None:
+            result = await self.db_session.scalars(
+                select(OrderOrm)
+                .where(OrderOrm.ticker == ticker.ticker)
+                .limit(ticker.limit)
+            )
+        else:
+            result = await self.db_session.scalars(
+                select(OrderOrm)
+                .where(OrderOrm.ticker == ticker.ticker)
+                .where(OrderOrm.direction == direction)
+                .where(
+                    or_(
+                        OrderOrm.status == OrderStatus.new,
+                        OrderOrm.status == OrderStatus.partially_executed,
+                    )
+                )
+                .order_by(OrderOrm.price)
+                .limit(ticker.limit)
+            )
         order_list = [Order.model_validate(order) for order in result.all()]
         return order_list
 

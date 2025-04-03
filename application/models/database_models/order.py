@@ -41,6 +41,6 @@ class Order(ModelBase):
     filled: int = 0
 
 
-class Orderbook(ModelBase):
+class Ticker(ModelBase):
     ticker: str
     limit: int

@@ -14,7 +14,7 @@ class TransactionOrm(Base):
     id: Mapped[UUID] = mapped_column(
         primary_key=True, default=uuid4, server_default=FetchedValue()
     )
-    ticker: Mapped[str]
+    ticker: Mapped[str] = mapped_column(index=True)
     qty: Mapped[int]
     price: Mapped[int]
     timestamp: Mapped[datetime.datetime] = mapped_column(

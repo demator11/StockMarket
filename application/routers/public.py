@@ -7,7 +7,7 @@ from application.database.repository.transaction_repository import (
 from application.models.database_models.order import (
     OrderStatus,
     OrderDirection,
-    Orderbook,
+    Ticker,
 )
 from application.models.database_models.transaction import Transaction
 from application.models.endpoint_models.public.get_orderbook import (
@@ -88,7 +88,7 @@ async def get_orderbook(
     if limit <= 0:
         limit = 10
     orders = await order_repository.get_by_ticker(
-        Orderbook(ticker=ticker, limit=limit)
+        Ticker(ticker=ticker, limit=limit)
     )
     bid_levels, ask_levels = [], []
     for order in orders:
