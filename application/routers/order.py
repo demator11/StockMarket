@@ -2,17 +2,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from application.database.repository.transaction_repository import (
-    TransactionRepository,
-)
+from application.broker.client import RabbitMQClient
+from application.di.rabbitmq import get_rabbitmq_client
 from application.models.database_models.order import (
     UpdateOrder,
     OrderStatus,
     Order,
-    Ticker,
-    OrderDirection,
 )
-from application.models.database_models.transaction import Transaction
 from application.models.endpoint_models.order.get_order_list import (
     LimitOrderListResponse,
     LimitOrderBodyListResponse,
@@ -21,10 +17,7 @@ from application.models.endpoint_models.order.get_order_list import (
 )
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
-from application.di.repositories import (
-    get_order_repository,
-    get_transaction_repository,
-)
+from application.di.repositories import get_order_repository
 from application.models.endpoint_models.order.get_order_by_id import (
     LimitOrderByIdResponse,
     MarketOrderByIdResponse,
@@ -47,6 +40,7 @@ async def create_order(
     new_order: CreateOrderRequest,
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
+    rabbit_mq: RabbitMQClient = Depends(get_rabbitmq_client),
 ) -> CreateOrderResponse:
     order_body = Order(
         status=OrderStatus.new,
@@ -57,6 +51,7 @@ async def create_order(
         price=new_order.price,
     )
     order = await order_repository.create(order_body)
+    await rabbit_mq.produce_order(order)
     return CreateOrderResponse(order_id=order.id)
 
 
@@ -151,74 +146,3 @@ async def cancel_order_by_id(
         UpdateOrder(id=order_id, status=OrderStatus.cancelled)
     )
     return SuccessResponse()
-
-
-# TODO перенести функцию в репозиторий кролика
-@order_router.get("/order/handle", summary="Get Ticker")
-async def get_orderbook(
-    order_repository: OrderRepository = Depends(get_order_repository),
-    transaction_repository: TransactionRepository = Depends(
-        get_transaction_repository
-    ),
-) -> None:
-    args = {
-        "id": "3f88dadd-e6eb-4e08-9062-42dfbb4ed96b",
-        "status": "NEW",
-        "user_id": "eb278a3b-38d1-4de7-9e54-cae35a209013",
-        "direction": OrderDirection.buy,
-        "ticker": "AAA",
-        "qty": 140,
-        "price": None,
-        "filled": 0,
-    }
-    current_order = Order(**args)
-    if current_order.direction == OrderDirection.sell:
-        orders = await order_repository.get_by_ticker(
-            Ticker(ticker=current_order.ticker, limit=current_order.qty),
-            OrderDirection.buy,
-        )
-    else:
-        orders = await order_repository.get_by_ticker(
-            Ticker(ticker=current_order.ticker, limit=current_order.qty),
-            OrderDirection.sell,
-        )
-    changed_orders_list = []
-    transactions_list = []
-    ticker_count = 0
-    for order in orders:
-        if ticker_count == current_order.qty:
-            break
-        amount_need_ticker = current_order.qty - ticker_count
-        amount_available_ticker = order.qty - order.filled
-        if current_order.price is None:
-            if amount_need_ticker >= amount_available_ticker:
-                ticker_filled = amount_available_ticker
-                order.filled = order.qty
-                changed_orders_list.append(order)
-                ticker_count += ticker_filled
-            else:
-                ticker_filled = amount_need_ticker
-                order.filled += ticker_filled
-                changed_orders_list.append(order)
-                ticker_count += ticker_filled
-
-        else:
-            if order.price == current_order.price:
-                ticker_filled = min(
-                    amount_need_ticker, amount_available_ticker
-                )
-                order.filled += ticker_filled
-                current_order.filled += ticker_filled
-                changed_orders_list.append(order)
-                ticker_count += ticker_filled
-            else:
-                break
-        transactions_list.append(
-            Transaction(
-                ticker=current_order.ticker,
-                qty=ticker_filled,
-                price=order.price,
-            )
-        )
-    current_order.filled = ticker_count
-    changed_orders_list.append(current_order)

@@ -49,7 +49,7 @@ RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 
 RABBITMQ_URL = get_rabbitmq_url(
     mq_host=RABBITMQ_HOST,
-    mq_port=POSTGRESQL_PORT,
+    mq_port=RABBITMQ_PORT,
     mq_login=RABBITMQ_LOGIN,
     mq_pass=RABBITMQ_PASS,
 )
