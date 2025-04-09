@@ -40,7 +40,7 @@ async def create_order(
     new_order: CreateOrderRequest,
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
-    rabbit_mq: RabbitMQClient = Depends(get_rabbitmq_client),
+    rabbit_client: RabbitMQClient = Depends(get_rabbitmq_client),
 ) -> CreateOrderResponse:
     order_body = Order(
         status=OrderStatus.new,
@@ -51,7 +51,7 @@ async def create_order(
         price=new_order.price,
     )
     order = await order_repository.create(order_body)
-    await rabbit_mq.produce_order(order)
+    await rabbit_client.produce_order(order)
     return CreateOrderResponse(order_id=order.id)
 
 
@@ -135,7 +135,6 @@ async def cancel_order_by_id(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> SuccessResponse:
-
     order_check = await order_repository.get_by_id(order_id)
     if order_check is None:
         raise HTTPException(status_code=404, detail="Ордер не найден")

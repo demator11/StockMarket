@@ -11,10 +11,7 @@ from application.database.repository.order_repository import OrderRepository
 async def main() -> None:
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     rabbit_client = RabbitMQClient(connection=connection)
-    async with async_session_factory.begin() as session:
-        await asyncio.create_task(
-            rabbit_client.consume(OrderRepository(db_session=session))
-        )
+    await rabbit_client.consume()
 
 
 if __name__ == "__main__":

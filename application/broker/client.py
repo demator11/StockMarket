@@ -19,17 +19,16 @@ class RabbitMQClient:
     ) -> None:
         async with self.connection:
             async with await self.connection.channel() as channel:
-                queue = await channel.declare_queue("orders", durable=True)
+                queue = await channel.declare_queue(self.queue, durable=True)
                 await channel.default_exchange.publish(
                     aio_pika.Message(body=order.json().encode()),
                     routing_key=queue.name,
                 )
 
-    async def consume(self, order_repository: OrderRepository) -> None:
+    async def consume(self) -> None:
         async with self.connection:
             async with await self.connection.channel() as channel:
-                queue = await channel.declare_queue("orders", durable=True)
-
+                queue = await channel.declare_queue(self.queue, durable=True)
                 async with queue.iterator() as queue_iter:
                     async for message in queue_iter:
-                        await process_order(message, order_repository)
+                        await process_order(message)

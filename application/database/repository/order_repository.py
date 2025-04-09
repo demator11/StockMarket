@@ -1,3 +1,4 @@
+import asyncio
 from uuid import UUID
 
 from sqlalchemy import insert, select, update, or_
@@ -76,3 +77,11 @@ class OrderRepository:
             .where(OrderOrm.id == params.id)
             .values(**update_values)
         )
+
+    async def bulk_update(self, orders: list[UpdateOrder]) -> None:
+        await asyncio.sleep(1)
+        if orders:
+            await self.db_session.execute(
+                update(OrderOrm),
+                [order.dict(exclude_none=True) for order in orders],
+            )
