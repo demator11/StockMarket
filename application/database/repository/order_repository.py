@@ -1,7 +1,6 @@
-import asyncio
 from uuid import UUID
 
-from sqlalchemy import insert, select, update, or_
+from sqlalchemy import insert, select, update, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.order import OrderOrm
@@ -10,7 +9,6 @@ from application.models.database_models.order import (
     UpdateOrder,
     OrderDirection,
     OrderStatus,
-    Ticker,
 )
 
 
@@ -45,18 +43,16 @@ class OrderRepository:
         return Order.model_validate(result)
 
     async def get_by_ticker(
-        self, ticker: Ticker, direction: OrderDirection | None = None
+        self, ticker: str, limit: int, direction: OrderDirection | None = None
     ) -> list[Order]:
         if direction is None:
             result = await self.db_session.scalars(
-                select(OrderOrm)
-                .where(OrderOrm.ticker == ticker.ticker)
-                .limit(ticker.limit)
+                select(OrderOrm).where(OrderOrm.ticker == ticker).limit(limit)
             )
         else:
             result = await self.db_session.scalars(
                 select(OrderOrm)
-                .where(OrderOrm.ticker == ticker.ticker)
+                .where(OrderOrm.ticker == ticker)
                 .where(OrderOrm.direction == direction)
                 .where(
                     or_(
@@ -65,7 +61,6 @@ class OrderRepository:
                     )
                 )
                 .order_by(OrderOrm.price)
-                .limit(ticker.limit)
             )
         order_list = [Order.model_validate(order) for order in result.all()]
         return order_list
@@ -78,10 +73,21 @@ class OrderRepository:
             .values(**update_values)
         )
 
-    async def bulk_update(self, orders: list[UpdateOrder]) -> None:
-        await asyncio.sleep(1)
-        if orders:
+    async def bulk_update(
+        self, ticker: str, orders: list[UpdateOrder]
+    ) -> None:
+        lock_id = hash(ticker)
+        try:
+            await self.db_session.execute(
+                select(func.pg_advisory_lock(lock_id)).where(
+                    OrderOrm.ticker == ticker
+                )
+            )
             await self.db_session.execute(
                 update(OrderOrm),
                 [order.dict(exclude_none=True) for order in orders],
+            )
+        finally:
+            await self.db_session.execute(
+                select(func.pg_advisory_unlock(lock_id))
             )

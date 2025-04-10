@@ -18,6 +18,15 @@ class TransactionRepository:
             )
         )
 
+    async def bulk_create(self, transactions: list[Transaction]):
+        await self.db_session.execute(
+            insert(TransactionOrm),
+            [
+                transaction.dict(exclude_unset=True)
+                for transaction in transactions
+            ],
+        )
+
     async def get(self, ticker: str, limit: int) -> list[Transaction]:
         result = await self.db_session.scalars(
             select(TransactionOrm)

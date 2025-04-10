@@ -7,9 +7,7 @@ from application.database.repository.transaction_repository import (
 from application.models.database_models.order import (
     OrderStatus,
     OrderDirection,
-    Ticker,
 )
-from application.models.database_models.transaction import Transaction
 from application.models.endpoint_models.public.get_orderbook import (
     GetOrderbookResponse,
     LevelResponse,
@@ -87,9 +85,7 @@ async def get_orderbook(
 ) -> GetOrderbookResponse:
     if limit <= 0:
         limit = 10
-    orders = await order_repository.get_by_ticker(
-        Ticker(ticker=ticker, limit=limit)
-    )
+    orders = await order_repository.get_by_ticker(ticker, limit)
     bid_levels, ask_levels = [], []
     for order in orders:
         if (
@@ -113,9 +109,6 @@ async def get_transaction_history(
         get_transaction_repository
     ),
 ) -> list[GetTransactionHistoryResponse]:
-    await transaction_repository.create(
-        Transaction(ticker=ticker, qty=limit, price=100)
-    )
     transactions = await transaction_repository.get(ticker, limit)
     result = []
     for transaction in transactions:

@@ -4,8 +4,6 @@ import aio_pika
 
 from application.broker.client import RabbitMQClient
 from application.database.config import RABBITMQ_URL
-from application.database.engine import async_session_factory
-from application.database.repository.order_repository import OrderRepository
 
 
 async def main() -> None:
