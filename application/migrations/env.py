@@ -10,6 +10,9 @@ from application.models.orm_models.balance import BalanceOrm  # noqa
 from application.models.orm_models.order import OrderOrm  # noqa
 from application.models.orm_models.instrument import InstrumentOrm  # noqa
 from application.models.orm_models.transaction import TransactionOrm  # noqa
+from application.models.orm_models.outbox_message import (  # noqa
+    OutboxMessageOrm,
+)
 from application.database.engine import Base
 
 config = context.config

@@ -1,8 +1,12 @@
 from dataclasses import field
+from uuid import UUID
 
 from aio_pika import IncomingMessage
 from pydantic import BaseModel
 
+from application.database.repository.outbox_message_repository import (
+    OutboxMessageRepository,
+)
 from application.models.orm_models.user import UserOrm  # noqa
 from application.database.engine import async_session_factory
 from application.database.repository.order_repository import OrderRepository
@@ -125,7 +129,7 @@ async def update_current_order_status(
 
 async def processing_orders(
     current_order: Order, matching_orders: list[Order]
-):
+) -> OrderProcessingResult:
     result = OrderProcessingResult()
 
     for order in matching_orders:
@@ -167,27 +171,46 @@ async def update_orders_and_create_transactions(
         await transaction_repository.bulk_create(result.transactions)
 
 
+async def delete_outbox_message(
+    message_id: UUID, outbox_message_repository: OutboxMessageRepository
+) -> None:
+    await outbox_message_repository.delete(message_id)
+
+
 async def process_order(
     message: IncomingMessage,
 ) -> None:
     async with async_session_factory.begin() as session:
         order_repository = OrderRepository(db_session=session)
         transaction_repository = TransactionRepository(db_session=session)
+        outbox_message_repository = OutboxMessageRepository(db_session=session)
+
         current_order = Order.model_validate_json(message.body.decode())
+        try:
+            lock_id = await order_repository.advisory_lock_by_ticker(
+                current_order.ticker
+            )
 
-        matching_orders = await get_matching_orders(
-            current_order, order_repository
-        )
+            if not await order_repository.create(current_order):
+                return
 
-        processing_result = await processing_orders(
-            current_order, matching_orders
-        )
+            matching_orders = await get_matching_orders(
+                current_order, order_repository
+            )
 
-        await update_orders_and_create_transactions(
-            order_repository,
-            transaction_repository,
-            current_order,
-            processing_result,
-        )
+            processing_result = await processing_orders(
+                current_order, matching_orders
+            )
 
+            await update_orders_and_create_transactions(
+                order_repository,
+                transaction_repository,
+                current_order,
+                processing_result,
+            )
+            await delete_outbox_message(
+                current_order.id, outbox_message_repository
+            )
+        finally:
+            await order_repository.advisory_unlock(lock_id)
     await message.ack()

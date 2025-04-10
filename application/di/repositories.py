@@ -2,6 +2,9 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.database.engine import async_session_factory
+from application.database.repository.outbox_message_repository import (
+    OutboxMessageRepository,
+)
 from application.database.repository.transaction_repository import (
     TransactionRepository,
 )
@@ -46,3 +49,9 @@ def get_transaction_repository(
     db: AsyncSession = Depends(get_db),
 ) -> TransactionRepository:
     return TransactionRepository(db_session=db)
+
+
+def get_outbox_message_repository(
+    db: AsyncSession = Depends(get_db),
+) -> OutboxMessageRepository:
+    return OutboxMessageRepository(db_session=db)

@@ -1,15 +1,16 @@
 import asyncio
 
-import aio_pika
-
 from application.broker.client import RabbitMQClient
 from application.database.config import RABBITMQ_URL
 
 
 async def main() -> None:
-    connection = await aio_pika.connect_robust(RABBITMQ_URL)
-    rabbit_client = RabbitMQClient(connection=connection)
-    await rabbit_client.consume()
+    rabbit_client = RabbitMQClient(RABBITMQ_URL)
+    await rabbit_client.connect()
+    try:
+        await rabbit_client.consume()
+    finally:
+        await rabbit_client.close()
 
 
 if __name__ == "__main__":

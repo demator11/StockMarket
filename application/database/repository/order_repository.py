@@ -16,10 +16,17 @@ class OrderRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create(self, order: Order) -> Order:
+    async def create(self, order: Order) -> Order | None:
+        print(1)
+        if not await self.db_session.scalars(
+            select(OrderOrm).where(OrderOrm.id == order.id)
+        ):
+            return None
+        print(2)
         result = await self.db_session.scalars(
             insert(OrderOrm)
             .values(
+                id=order.id,
                 status=OrderStatus(order.status),
                 user_id=order.user_id,
                 direction=OrderDirection(order.direction),
@@ -29,6 +36,7 @@ class OrderRepository:
             )
             .returning(OrderOrm)
         )
+        print(3)
         return Order.model_validate(result.one())
 
     async def get_all(self) -> list[Order]:
@@ -76,18 +84,19 @@ class OrderRepository:
     async def bulk_update(
         self, ticker: str, orders: list[UpdateOrder]
     ) -> None:
+        await self.db_session.execute(
+            update(OrderOrm),
+            [order.dict(exclude_none=True) for order in orders],
+        )
+
+    async def advisory_lock_by_ticker(self, ticker) -> int:
         lock_id = hash(ticker)
-        try:
-            await self.db_session.execute(
-                select(func.pg_advisory_lock(lock_id)).where(
-                    OrderOrm.ticker == ticker
-                )
+        await self.db_session.execute(
+            select(func.pg_advisory_lock(lock_id)).where(
+                OrderOrm.ticker == ticker
             )
-            await self.db_session.execute(
-                update(OrderOrm),
-                [order.dict(exclude_none=True) for order in orders],
-            )
-        finally:
-            await self.db_session.execute(
-                select(func.pg_advisory_unlock(lock_id))
-            )
+        )
+        return lock_id
+
+    async def advisory_unlock(self, lock_id: int) -> None:
+        await self.db_session.execute(select(func.pg_advisory_unlock(lock_id)))

@@ -2,13 +2,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from application.broker.client import RabbitMQClient
-from application.di.rabbitmq import get_rabbitmq_client
+from application.database.repository.outbox_message_repository import (
+    OutboxMessageRepository,
+)
 from application.models.database_models.order import (
     UpdateOrder,
     OrderStatus,
     Order,
 )
+from application.models.database_models.outbox_message import OutboxMessage
 from application.models.endpoint_models.order.get_order_list import (
     LimitOrderListResponse,
     LimitOrderBodyListResponse,
@@ -17,7 +19,10 @@ from application.models.endpoint_models.order.get_order_list import (
 )
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
-from application.di.repositories import get_order_repository
+from application.di.repositories import (
+    get_order_repository,
+    get_outbox_message_repository,
+)
 from application.models.endpoint_models.order.get_order_by_id import (
     LimitOrderByIdResponse,
     MarketOrderByIdResponse,
@@ -39,8 +44,9 @@ order_router = APIRouter(prefix="/api/v1/order")
 async def create_order(
     new_order: CreateOrderRequest,
     authorization: UUID = Depends(user_authorization),
-    order_repository: OrderRepository = Depends(get_order_repository),
-    rabbit_client: RabbitMQClient = Depends(get_rabbitmq_client),
+    outbox_message_repository: OutboxMessageRepository = Depends(
+        get_outbox_message_repository
+    ),
 ) -> CreateOrderResponse:
     order_body = Order(
         status=OrderStatus.new,
@@ -50,9 +56,12 @@ async def create_order(
         qty=new_order.qty,
         price=new_order.price,
     )
-    order = await order_repository.create(order_body)
-    await rabbit_client.produce_order(order)
-    return CreateOrderResponse(order_id=order.id)
+    await outbox_message_repository.create(
+        OutboxMessage(
+            id=order_body.id, payload=str(order_body.model_dump_json())
+        )
+    )
+    return CreateOrderResponse(order_id=order_body.id)
 
 
 @order_router.get("", summary="List Orders")
