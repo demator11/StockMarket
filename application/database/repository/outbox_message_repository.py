@@ -25,7 +25,7 @@ class OutboxMessageRepository:
             select(OutboxMessageOrm)
             .where(
                 or_(
-                    OutboxMessageOrm.is_sent == False,  # noqa
+                    OutboxMessageOrm.is_sent.is_(False),
                     OutboxMessageOrm.created_at
                     < datetime.now() - timedelta(minutes=5),
                 )

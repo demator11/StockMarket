@@ -1,3 +1,5 @@
+from functools import partial
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,35 +25,13 @@ async def get_db() -> AsyncSession:
         yield session
 
 
-def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:
-    return UserRepository(db_session=db)
+def _get_repository(repo_class):
+    return partial(repo_class, db_session=Depends(get_db))
 
 
-def get_instrument_repository(
-    db: AsyncSession = Depends(get_db),
-) -> InstrumentRepository:
-    return InstrumentRepository(db_session=db)
-
-
-def get_balance_repository(
-    db: AsyncSession = Depends(get_db),
-) -> BalanceRepository:
-    return BalanceRepository(db_session=db)
-
-
-def get_order_repository(
-    db: AsyncSession = Depends(get_db),
-) -> OrderRepository:
-    return OrderRepository(db_session=db)
-
-
-def get_transaction_repository(
-    db: AsyncSession = Depends(get_db),
-) -> TransactionRepository:
-    return TransactionRepository(db_session=db)
-
-
-def get_outbox_message_repository(
-    db: AsyncSession = Depends(get_db),
-) -> OutboxMessageRepository:
-    return OutboxMessageRepository(db_session=db)
+get_user_repository = _get_repository(UserRepository)
+get_instrument_repository = _get_repository(InstrumentRepository)
+get_balance_repository = _get_repository(BalanceRepository)
+get_order_repository = _get_repository(OrderRepository)
+get_transaction_repository = _get_repository(TransactionRepository)
+get_outbox_message_repository = _get_repository(OutboxMessageRepository)

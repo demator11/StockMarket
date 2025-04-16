@@ -17,12 +17,10 @@ class OrderRepository:
         self.db_session = db_session
 
     async def create(self, order: Order) -> Order | None:
-        print(1)
         if not await self.db_session.scalars(
             select(OrderOrm).where(OrderOrm.id == order.id)
         ):
             return None
-        print(2)
         result = await self.db_session.scalars(
             insert(OrderOrm)
             .values(
@@ -36,7 +34,6 @@ class OrderRepository:
             )
             .returning(OrderOrm)
         )
-        print(3)
         return Order.model_validate(result.one())
 
     async def get_all(self) -> list[Order]:

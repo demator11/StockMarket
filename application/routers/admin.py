@@ -128,7 +128,7 @@ async def withdraw_user_balance(
     return SuccessResponse()
 
 
-@admin_router.get("/")
+@admin_router.post("/")
 async def get_admin_role(
     authorization: UUID = Depends(user_authorization),
     user_repository: UserRepository = Depends(get_user_repository),

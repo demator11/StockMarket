@@ -16,30 +16,31 @@ load_dotenv()
 api_key_header = APIKeyHeader(name="Authorization")
 
 
-async def user_authorization(
-    api_key: str = Security(api_key_header),
+async def _base_authorization(
+    api_key: str,
+    required_role: UserRole | None = None,
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    user_id = await user_repository.get_by_api_key(api_key)
-    if user_id is None:
+    user = await user_repository.get_by_api_key(api_key)
+    if user is None:
         raise HTTPException(
             status_code=401, detail="Пользователь не авторизован"
         )
-    return user_id.id
+    if required_role and user.role != required_role:
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
+    return user.id
+
+
+async def user_authorization(
+    api_key: str = Security(api_key_header),
+) -> UUID:
+    return await _base_authorization(api_key)
 
 
 async def admin_authorization(
     api_key: str = Security(api_key_header),
-    user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    admin = await user_repository.get_by_api_key(api_key)
-    if admin is None:
-        raise HTTPException(
-            status_code=401, detail="Пользователь не авторизован"
-        )
-    elif admin.role != UserRole.admin:
-        raise HTTPException(status_code=403, detail="Недостаточно прав")
-    return admin.id
+    return await _base_authorization(api_key, UserRole.admin)
 
 
 def get_auth_data():

@@ -30,7 +30,7 @@ POSTGRESQL_URL = get_database_url(
     db_name=POSTGRESQL_NAME,
 )
 
-POSTGRESQL_ECHO = bool(os.getenv("POSTGRESQL_ECHO"))
+POSTGRESQL_ECHO = eval(os.getenv("POSTGRESQL_ECHO", "False"))
 
 
 def get_rabbitmq_url(

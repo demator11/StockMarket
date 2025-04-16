@@ -12,14 +12,21 @@ class BalanceRepository:
         self.db_session = db_session
 
     async def upsert(self, deposit: Balance) -> Balance:
+        lock_id = hash(deposit.ticker)
         try:
-            await self.db_session.execute(select(func.pg_advisory_lock(123)))
+            await self.db_session.execute(
+                select(func.pg_advisory_lock(lock_id)).where(
+                    BalanceOrm.ticker == deposit.ticker
+                )
+            )
+
             ticker_exists = await self.db_session.scalars(
                 select(BalanceOrm)
                 .where(BalanceOrm.user_id == deposit.user_id)
                 .where(BalanceOrm.ticker == deposit.ticker)
             )
             ticker = ticker_exists.one_or_none()
+
             if ticker is None:
                 result = await self.db_session.scalars(
                     insert(BalanceOrm)
@@ -42,9 +49,11 @@ class BalanceRepository:
 
             return Balance.model_validate(result.one())
         finally:
-            await self.db_session.execute(select(func.pg_advisory_unlock(123)))
+            await self.db_session.execute(
+                select(func.pg_advisory_unlock(lock_id))
+            )
 
-    async def get_user_by_id(self, user_id: UUID) -> list[Balance]:
+    async def get_balances_by_user_id(self, user_id: UUID) -> list[Balance]:
         query = select(BalanceOrm).where(BalanceOrm.user_id == user_id)
         result = await self.db_session.scalars(query)
         if result is None:
