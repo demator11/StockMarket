@@ -44,30 +44,6 @@ class OrderProcessingResult(BaseModel):
     def add_withdraw_balance(self, balance: Balance):
         self.withdraw_balances.append(balance)
 
-    def add_current_balance(
-        self, current_order: Order, deposit_ticker: str, withdraw_ticker: str
-    ):
-        deposit_qty = 0
-        withdraw_qty = 0
-        for balance in self.withdraw_balances:
-            deposit_qty += balance.qty
-        for balance in self.deposit_balances:
-            withdraw_qty += balance.qty
-        self.add_deposit_balance(
-            Balance(
-                user_id=current_order.user_id,
-                ticker=deposit_ticker,
-                qty=deposit_qty,
-            )
-        )
-        self.add_withdraw_balance(
-            Balance(
-                user_id=current_order.user_id,
-                ticker=withdraw_ticker,
-                qty=withdraw_qty,
-            )
-        )
-
     def add_transaction(self, transaction: Transaction):
         self.transactions.append(transaction)
 
@@ -80,8 +56,8 @@ class OrderProcessingResult(BaseModel):
 
 class OrderFillResult(BaseModel):
     order_update: UpdateOrder
-    deposit_balance_update: Balance
-    withdraw_balance_update: Balance
+    deposit_balance: Balance
+    withdraw_balance: Balance
     transaction: Transaction
     deposit_ticker: str
     withdraw_ticker: str
@@ -174,8 +150,8 @@ async def calculate_order_fill(
 
     return OrderFillResult(
         order_update=order_update,
-        deposit_balance_update=deposit_balance_update,
-        withdraw_balance_update=withdraw_balance_update,
+        deposit_balance=deposit_balance_update,
+        withdraw_balance=withdraw_balance_update,
         transaction=transaction,
         ticker_filled=ticker_filled,
         deposit_ticker=deposit_ticker,
@@ -205,6 +181,34 @@ async def update_current_order_status(
     )
 
 
+async def add_current_balance(
+    current_order: Order,
+    deposit_ticker: str,
+    withdraw_ticker: str,
+    result: OrderProcessingResult,
+) -> None:
+    deposit_qty = 0
+    withdraw_qty = 0
+    for balance in result.withdraw_balances:
+        deposit_qty += balance.qty
+    for balance in result.deposit_balances:
+        withdraw_qty += balance.qty
+    result.add_deposit_balance(
+        Balance(
+            user_id=current_order.user_id,
+            ticker=deposit_ticker,
+            qty=deposit_qty,
+        )
+    )
+    result.add_withdraw_balance(
+        Balance(
+            user_id=current_order.user_id,
+            ticker=withdraw_ticker,
+            qty=withdraw_qty,
+        )
+    )
+
+
 async def processing_orders(
     current_order: Order, matching_orders: list[Order], base_asset: str
 ) -> OrderProcessingResult:
@@ -219,15 +223,16 @@ async def processing_orders(
         )
         if fill_result:
             result.add_order(fill_result.order_update)
-            result.add_deposit_balance(fill_result.deposit_balance_update)
-            result.add_withdraw_balance(fill_result.withdraw_balance_update)
+            result.add_deposit_balance(fill_result.deposit_balance)
+            result.add_withdraw_balance(fill_result.withdraw_balance)
             result.add_transaction(fill_result.transaction)
             result.ticker_count += fill_result.ticker_filled
     if fill_result:
-        result.add_current_balance(
-            current_order,
-            fill_result.withdraw_ticker,
-            fill_result.deposit_ticker,
+        await add_current_balance(
+            current_order=current_order,
+            deposit_ticker=fill_result.withdraw_ticker,
+            withdraw_ticker=fill_result.deposit_ticker,
+            result=result,
         )
     updated_current_order = await update_current_order_status(
         current_order, result.ticker_count
@@ -279,8 +284,8 @@ async def process_order_fill(
         )
 
     if result.transactions:
-        await update_balances(current_order, result, balance_repository)
         await create_transactions(result.transactions, transaction_repository)
+        await update_balances(current_order, result, balance_repository)
 
 
 async def process_order(
