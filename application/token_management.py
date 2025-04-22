@@ -16,10 +16,10 @@ load_dotenv()
 api_key_header = APIKeyHeader(name="Authorization")
 
 
-async def _base_authorization(
+async def base_authorization(
     api_key: str,
+    user_repository: UserRepository,
     required_role: UserRole | None = None,
-    user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
     user = await user_repository.get_by_api_key(api_key)
     if user is None:
@@ -33,14 +33,16 @@ async def _base_authorization(
 
 async def user_authorization(
     api_key: str = Security(api_key_header),
+    user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    return await _base_authorization(api_key)
+    return await base_authorization(api_key, user_repository)
 
 
 async def admin_authorization(
     api_key: str = Security(api_key_header),
+    user_repository: UserRepository = Depends(get_user_repository),
 ) -> UUID:
-    return await _base_authorization(api_key, UserRole.admin)
+    return await base_authorization(api_key, user_repository, UserRole.admin)
 
 
 def get_auth_data():

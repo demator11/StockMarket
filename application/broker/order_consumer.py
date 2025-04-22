@@ -1,12 +1,18 @@
 from dataclasses import field
-from uuid import UUID
 
 from aio_pika import IncomingMessage
 from pydantic import BaseModel
 
+from application.database.repository.app_config_repository import (
+    AppConfigRepository,
+)
+from application.database.repository.balance_repository import (
+    BalanceRepository,
+)
 from application.database.repository.outbox_message_repository import (
     OutboxMessageRepository,
 )
+from application.models.database_models.balance import Balance
 from application.models.orm_models.user import UserOrm  # noqa
 from application.database.engine import async_session_factory
 from application.database.repository.order_repository import OrderRepository
@@ -24,23 +30,61 @@ from application.models.database_models.transaction import Transaction
 
 class OrderProcessingResult(BaseModel):
     changed_orders: list[UpdateOrder] = field(default_factory=list)
+    deposit_balances: list[Balance] = field(default_factory=list)
+    withdraw_balances: list[Balance] = field(default_factory=list)
     transactions: list[Transaction] = field(default_factory=list)
     ticker_count: int = 0
 
     def add_order(self, order: UpdateOrder):
         self.changed_orders.append(order)
 
+    def add_deposit_balance(self, balance: Balance):
+        self.deposit_balances.append(balance)
+
+    def add_withdraw_balance(self, balance: Balance):
+        self.withdraw_balances.append(balance)
+
+    def add_current_balance(
+        self, current_order: Order, deposit_ticker: str, withdraw_ticker: str
+    ):
+        deposit_qty = 0
+        withdraw_qty = 0
+        for balance in self.withdraw_balances:
+            deposit_qty += balance.qty
+        for balance in self.deposit_balances:
+            withdraw_qty += balance.qty
+        self.add_deposit_balance(
+            Balance(
+                user_id=current_order.user_id,
+                ticker=deposit_ticker,
+                qty=deposit_qty,
+            )
+        )
+        self.add_withdraw_balance(
+            Balance(
+                user_id=current_order.user_id,
+                ticker=withdraw_ticker,
+                qty=withdraw_qty,
+            )
+        )
+
     def add_transaction(self, transaction: Transaction):
         self.transactions.append(transaction)
 
     def clear_all(self):
         self.changed_orders.clear()
+        self.deposit_balances.clear()
+        self.withdraw_balances.clear()
         self.transactions.clear()
 
 
 class OrderFillResult(BaseModel):
     order_update: UpdateOrder
+    deposit_balance_update: Balance
+    withdraw_balance_update: Balance
     transaction: Transaction
+    deposit_ticker: str
+    withdraw_ticker: str
     ticker_filled: int
 
 
@@ -62,7 +106,10 @@ async def get_matching_orders(
 
 
 async def calculate_order_fill(
-    current_order: Order, matching_order: Order, filled_so_far: int
+    current_order: Order,
+    matching_order: Order,
+    filled_so_far: int,
+    base_asset: str,
 ) -> OrderFillResult | None:
     need = current_order.qty - filled_so_far
     available = matching_order.qty - matching_order.filled
@@ -87,6 +134,33 @@ async def calculate_order_fill(
         else:
             matching_order.status = OrderStatus.executed
 
+    assert matching_order.price is not None
+    if current_order.direction == OrderDirection.sell:
+        deposit_balance_update = Balance(
+            user_id=matching_order.user_id,
+            ticker=matching_order.ticker,
+            qty=ticker_filled,
+        )
+        withdraw_balance_update = Balance(
+            user_id=matching_order.user_id,
+            ticker=base_asset,
+            qty=ticker_filled * matching_order.price,
+        )
+        deposit_ticker = matching_order.ticker
+        withdraw_ticker = base_asset
+    else:
+        deposit_balance_update = Balance(
+            user_id=matching_order.user_id,
+            ticker=base_asset,
+            qty=ticker_filled * matching_order.price,
+        )
+        withdraw_balance_update = Balance(
+            user_id=matching_order.user_id,
+            ticker=matching_order.ticker,
+            qty=ticker_filled,
+        )
+        deposit_ticker = base_asset
+        withdraw_ticker = matching_order.ticker
     order_update = UpdateOrder(
         id=matching_order.id,
         status=matching_order.status,
@@ -100,8 +174,12 @@ async def calculate_order_fill(
 
     return OrderFillResult(
         order_update=order_update,
+        deposit_balance_update=deposit_balance_update,
+        withdraw_balance_update=withdraw_balance_update,
         transaction=transaction,
         ticker_filled=ticker_filled,
+        deposit_ticker=deposit_ticker,
+        withdraw_ticker=withdraw_ticker,
     )
 
 
@@ -128,22 +206,29 @@ async def update_current_order_status(
 
 
 async def processing_orders(
-    current_order: Order, matching_orders: list[Order]
+    current_order: Order, matching_orders: list[Order], base_asset: str
 ) -> OrderProcessingResult:
     result = OrderProcessingResult()
-
+    fill_result = None
     for order in matching_orders:
         if result.ticker_count >= current_order.qty:
             break
 
         fill_result = await calculate_order_fill(
-            current_order, order, result.ticker_count
+            current_order, order, result.ticker_count, base_asset
         )
         if fill_result:
-            result.add_transaction(fill_result.transaction)
             result.add_order(fill_result.order_update)
+            result.add_deposit_balance(fill_result.deposit_balance_update)
+            result.add_withdraw_balance(fill_result.withdraw_balance_update)
+            result.add_transaction(fill_result.transaction)
             result.ticker_count += fill_result.ticker_filled
-
+    if fill_result:
+        result.add_current_balance(
+            current_order,
+            fill_result.withdraw_ticker,
+            fill_result.deposit_ticker,
+        )
     updated_current_order = await update_current_order_status(
         current_order, result.ticker_count
     )
@@ -156,25 +241,46 @@ async def processing_orders(
     return result
 
 
-async def update_orders_and_create_transactions(
-    order_repository: OrderRepository,
-    transaction_repository: TransactionRepository,
+async def update_orders(
+    ticker: str, orders: list[UpdateOrder], order_repository: OrderRepository
+) -> None:
+    await order_repository.bulk_update(ticker, orders)
+
+
+async def update_balances(
     current_order: Order,
     result: OrderProcessingResult,
+    balance_repository: BalanceRepository,
+) -> None:
+    await balance_repository.bulk_adjust(
+        ticker=current_order.ticker,
+        deposit_balances=result.deposit_balances,
+        withdraw_balances=result.withdraw_balances,
+    )
+
+
+async def create_transactions(
+    transactions: list[Transaction],
+    transaction_repository: TransactionRepository,
+) -> None:
+    await transaction_repository.bulk_create(transactions)
+
+
+async def process_order_fill(
+    current_order: Order,
+    result: OrderProcessingResult,
+    order_repository: OrderRepository,
+    transaction_repository: TransactionRepository,
+    balance_repository: BalanceRepository,
 ) -> None:
     if result.changed_orders:
-        await order_repository.bulk_update(
-            current_order.ticker, result.changed_orders
+        await update_orders(
+            current_order.ticker, result.changed_orders, order_repository
         )
 
     if result.transactions:
-        await transaction_repository.bulk_create(result.transactions)
-
-
-async def delete_outbox_message(
-    message_id: UUID, outbox_message_repository: OutboxMessageRepository
-) -> None:
-    await outbox_message_repository.delete(message_id)
+        await update_balances(current_order, result, balance_repository)
+        await create_transactions(result.transactions, transaction_repository)
 
 
 async def process_order(
@@ -183,34 +289,36 @@ async def process_order(
     async with async_session_factory.begin() as session:
         order_repository = OrderRepository(db_session=session)
         transaction_repository = TransactionRepository(db_session=session)
+        balance_repository = BalanceRepository(db_session=session)
         outbox_message_repository = OutboxMessageRepository(db_session=session)
+        app_config_repository = AppConfigRepository(db_session=session)
 
         current_order = Order.model_validate_json(message.body.decode())
+        if not await order_repository.create(current_order):
+            return
         try:
             lock_id = await order_repository.advisory_lock_by_ticker(
                 current_order.ticker
             )
 
-            if not await order_repository.create(current_order):
-                return
-
             matching_orders = await get_matching_orders(
                 current_order, order_repository
             )
+            print(matching_orders)
+            base_asset = await app_config_repository.get("base_asset") or "RUB"
 
             processing_result = await processing_orders(
-                current_order, matching_orders
+                current_order, matching_orders, base_asset
             )
 
-            await update_orders_and_create_transactions(
-                order_repository,
-                transaction_repository,
-                current_order,
-                processing_result,
+            await process_order_fill(
+                current_order=current_order,
+                result=processing_result,
+                order_repository=order_repository,
+                transaction_repository=transaction_repository,
+                balance_repository=balance_repository,
             )
-            await delete_outbox_message(
-                current_order.id, outbox_message_repository
-            )
+            await outbox_message_repository.delete(current_order.id)
         finally:
             await order_repository.advisory_unlock(lock_id)
     await message.ack()

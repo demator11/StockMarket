@@ -13,6 +13,7 @@ from application.models.orm_models.transaction import TransactionOrm  # noqa
 from application.models.orm_models.outbox_message import (  # noqa
     OutboxMessageOrm,
 )
+from application.models.orm_models.app_config import AppConfigOrm  # noqa
 from application.database.engine import Base
 
 config = context.config

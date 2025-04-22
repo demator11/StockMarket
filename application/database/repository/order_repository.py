@@ -17,10 +17,12 @@ class OrderRepository:
         self.db_session = db_session
 
     async def create(self, order: Order) -> Order | None:
-        if not await self.db_session.scalars(
+        order_exists = await self.db_session.scalars(
             select(OrderOrm).where(OrderOrm.id == order.id)
-        ):
+        )
+        if order_exists.one_or_none():
             return None
+
         result = await self.db_session.scalars(
             insert(OrderOrm)
             .values(

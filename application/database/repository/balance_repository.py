@@ -85,3 +85,67 @@ class BalanceRepository:
             .returning(BalanceOrm)
         )
         return Balance.model_validate(result.one())
+
+    async def bulk_adjust(
+        self,
+        ticker: str,
+        deposit_balances: list[Balance],
+        withdraw_balances: list[Balance],
+    ) -> None:
+        lock_id = hash(ticker)
+        try:
+            await self.db_session.execute(
+                select(func.pg_advisory_lock(lock_id)).where(
+                    BalanceOrm.ticker == ticker
+                )
+            )
+            for deposit in deposit_balances:
+                ticker_exists = await self.db_session.scalars(
+                    select(BalanceOrm)
+                    .where(BalanceOrm.user_id == deposit.user_id)
+                    .where(BalanceOrm.ticker == deposit.ticker)
+                )
+                ticker_body = ticker_exists.one_or_none()
+
+                if ticker_body is None:
+                    await self.db_session.execute(
+                        insert(BalanceOrm).values(
+                            user_id=deposit.user_id,
+                            ticker=deposit.ticker,
+                            qty=deposit.qty,
+                        )
+                    )
+                else:
+                    await self.db_session.execute(
+                        update(BalanceOrm)
+                        .values(qty=ticker_body.qty + deposit.qty)
+                        .where(BalanceOrm.user_id == deposit.user_id)
+                        .where(BalanceOrm.ticker == deposit.ticker)
+                    )
+
+            for withdraw in withdraw_balances:
+                ticker_exists = await self.db_session.scalars(
+                    select(BalanceOrm)
+                    .where(BalanceOrm.user_id == withdraw.user_id)
+                    .where(BalanceOrm.ticker == withdraw.ticker)
+                )
+                ticker_body = ticker_exists.one_or_none()
+                if ticker_body is None:
+                    return None
+                elif ticker_body.qty < withdraw.qty:
+                    await self.db_session.execute(
+                        delete(BalanceOrm)
+                        .where(BalanceOrm.user_id == withdraw.user_id)
+                        .where(BalanceOrm.ticker == withdraw.ticker)
+                    )
+                await self.db_session.execute(
+                    update(BalanceOrm)
+                    .values(qty=BalanceOrm.qty - withdraw.qty)
+                    .where(BalanceOrm.user_id == withdraw.user_id)
+                    .where(BalanceOrm.ticker == withdraw.ticker)
+                )
+
+        finally:
+            await self.db_session.execute(
+                select(func.pg_advisory_unlock(lock_id))
+            )

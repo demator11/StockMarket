@@ -2,11 +2,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
+from application.database.repository.app_config_repository import (
+    AppConfigRepository,
+)
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
+from application.models.database_models.app_config import AppConfig
 from application.models.database_models.balance import Balance
 from application.models.database_models.user import UserRole
+from application.models.endpoint_models.admin.create_config import (
+    CreateConfigRequest,
+)
 from application.models.endpoint_models.admin.create_instrument import (
     CreateInstrumentRequest,
 )
@@ -30,6 +37,7 @@ from application.di.repositories import (
     get_instrument_repository,
     get_user_repository,
     get_balance_repository,
+    get_app_config_repository,
 )
 from application.models.database_models.instrument import Instrument
 from application.token_management import (
@@ -134,4 +142,17 @@ async def get_admin_role(
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     await user_repository.change_user_role(authorization, UserRole.admin)
+    return SuccessResponse()
+
+
+@admin_router.post("/config/create")
+async def create_config(
+    new_config: CreateConfigRequest,
+    authorization: UUID = Depends(admin_authorization),
+    config_repository: AppConfigRepository = Depends(
+        get_app_config_repository
+    ),
+) -> SuccessResponse:
+    config = AppConfig(key=new_config.key, value=new_config.value)
+    await config_repository.upsert(config)
     return SuccessResponse()
