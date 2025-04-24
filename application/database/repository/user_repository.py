@@ -40,6 +40,7 @@ class UserRepository:
         result = await self.db_session.scalars(
             delete(UserOrm).where(UserOrm.id == user_id).returning(UserOrm)
         )
-        if result.one_or_none() is None:
+        result = result.one_or_none()
+        if result is None:
             return None
         return User.model_validate(result)

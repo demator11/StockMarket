@@ -54,11 +54,25 @@ class BalanceRepository:
             )
 
     async def get_balances_by_user_id(self, user_id: UUID) -> list[Balance]:
-        query = select(BalanceOrm).where(BalanceOrm.user_id == user_id)
-        result = await self.db_session.scalars(query)
+        result = await self.db_session.scalars(
+            select(BalanceOrm).where(BalanceOrm.user_id == user_id)
+        )
         if result is None:
             return []
         return [Balance.model_validate(row) for row in result.all()]
+
+    async def get_balance_by_user_id_and_ticker(
+        self, user_id: UUID, ticker: str
+    ) -> Balance | None:
+        result = await self.db_session.scalars(
+            select(BalanceOrm)
+            .where(BalanceOrm.user_id == user_id)
+            .where(BalanceOrm.ticker == ticker)
+        )
+        result = result.one_or_none()
+        if result is None:
+            return None
+        return Balance.model_validate(result)
 
     async def delete_or_update(self, withdraw: Balance) -> Balance | None:
         ticker_exists = await self.db_session.scalars(

@@ -2,6 +2,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
+from application.database.repository.app_config_repository import (
+    AppConfigRepository,
+)
+from application.database.repository.balance_repository import (
+    BalanceRepository,
+)
+from application.database.repository.instrument_repository import (
+    InstrumentRepository,
+)
 from application.database.repository.outbox_message_repository import (
     OutboxMessageRepository,
 )
@@ -9,6 +18,7 @@ from application.models.database_models.order import (
     UpdateOrder,
     OrderStatus,
     Order,
+    OrderDirection,
 )
 from application.models.database_models.outbox_message import OutboxMessage
 from application.models.endpoint_models.order.get_order_list import (
@@ -22,6 +32,9 @@ from application.database.repository.order_repository import OrderRepository
 from application.di.repositories import (
     get_order_repository,
     get_outbox_message_repository,
+    get_app_config_repository,
+    get_instrument_repository,
+    get_balance_repository,
 )
 from application.models.endpoint_models.order.get_order_by_id import (
     LimitOrderByIdResponse,
@@ -47,6 +60,13 @@ async def create_order(
     outbox_message_repository: OutboxMessageRepository = Depends(
         get_outbox_message_repository
     ),
+    app_config_repository: AppConfigRepository = Depends(
+        get_app_config_repository
+    ),
+    instrument_repository: InstrumentRepository = Depends(
+        get_instrument_repository
+    ),
+    balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> CreateOrderResponse:
     order_body = Order(
         status=OrderStatus.new,
@@ -56,6 +76,56 @@ async def create_order(
         qty=new_order.qty,
         price=new_order.price,
     )
+    base_asset = await app_config_repository.get("base_asset") or "RUB"
+    if order_body.ticker == base_asset:
+        raise HTTPException(
+            status_code=400,
+            detail="Создание заявки на данный эквивалент невозможна",
+        )
+
+    ticker_exists = await instrument_repository.exists_in_database(
+        order_body.ticker
+    )
+    if not ticker_exists:
+        raise HTTPException(
+            status_code=400, detail="Данного тикера не существует"
+        )
+
+    user_base_asset_balance = (
+        await balance_repository.get_balance_by_user_id_and_ticker(
+            authorization, base_asset
+        )
+    )
+    user_current_ticker_balance = (
+        await balance_repository.get_balance_by_user_id_and_ticker(
+            authorization, order_body.ticker
+        )
+    )
+    if order_body.direction == OrderDirection.sell:
+        if user_current_ticker_balance is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{order_body.ticker} отсутствует на балансе",
+            )
+        elif user_current_ticker_balance.qty < order_body.qty:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно {user_current_ticker_balance.ticker} на балансе",  # noqa
+            )
+    else:
+        if user_base_asset_balance is None:
+            raise HTTPException(
+                status_code=400, detail=f"{base_asset} отсутствует на балансе"
+            )
+        elif (
+            order_body.price is not None
+            and user_base_asset_balance.qty < order_body.price * order_body.qty
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно {user_base_asset_balance.ticker} на балансе",  # noqa
+            )
+
     await outbox_message_repository.create(
         OutboxMessage(
             id=order_body.id, payload=str(order_body.model_dump_json())

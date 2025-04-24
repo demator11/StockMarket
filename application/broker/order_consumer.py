@@ -309,7 +309,6 @@ async def process_order(
             matching_orders = await get_matching_orders(
                 current_order, order_repository
             )
-            print(matching_orders)
             base_asset = await app_config_repository.get("base_asset") or "RUB"
 
             processing_result = await processing_orders(
