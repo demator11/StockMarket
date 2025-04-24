@@ -107,12 +107,22 @@ async def deposit_user_balance(
     deposit_request: DepositUserBalanceRequest,
     authorization: UUID = Depends(admin_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
+    instrument_repository: InstrumentRepository = Depends(
+        get_instrument_repository
+    ),
 ) -> SuccessResponse:
     deposit = Balance(
         user_id=deposit_request.user_id,
         ticker=deposit_request.ticker,
         qty=deposit_request.amount,
     )
+    ticker_exists = await instrument_repository.exists_in_database(
+        deposit.ticker
+    )
+    if not ticker_exists:
+        raise HTTPException(
+            status_code=400, detail="Данного тикера не существует"
+        )
     await balance_repository.upsert(deposit)
     return SuccessResponse()
 
