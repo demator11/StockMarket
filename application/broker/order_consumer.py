@@ -26,6 +26,9 @@ from application.models.database_models.order import (
     OrderStatus,
 )
 from application.models.database_models.transaction import Transaction
+from logger import setup_logging
+
+logger = setup_logging(__name__)
 
 
 class OrderProcessingResult(BaseModel):
@@ -247,9 +250,9 @@ async def processing_orders(
 
 
 async def update_orders(
-    ticker: str, orders: list[UpdateOrder], order_repository: OrderRepository
+    orders: list[UpdateOrder], order_repository: OrderRepository
 ) -> None:
-    await order_repository.bulk_update(ticker, orders)
+    await order_repository.bulk_update(orders)
 
 
 async def update_balances(
@@ -279,13 +282,15 @@ async def process_order_fill(
     balance_repository: BalanceRepository,
 ) -> None:
     if result.changed_orders:
-        await update_orders(
-            current_order.ticker, result.changed_orders, order_repository
-        )
+        await update_orders(result.changed_orders, order_repository)
+        logger.info(f"Update orders: {result.changed_orders}")
 
     if result.transactions:
         await create_transactions(result.transactions, transaction_repository)
+        logger.info(f"Create transactions: {result.transactions}")
         await update_balances(current_order, result, balance_repository)
+        logger.info(f"Deposit balances: {result.deposit_balances}")
+        logger.info(f"Withdraw balances: {result.withdraw_balances}")
 
 
 async def process_order(
@@ -301,9 +306,13 @@ async def process_order(
         current_order = Order.model_validate_json(message.body.decode())
         if not await order_repository.create(current_order):
             return
+        logger.info(f"Process order has started: {current_order}")
         try:
             lock_id = await order_repository.advisory_lock_by_ticker(
                 current_order.ticker
+            )
+            logger.info(
+                f"Obtained advisory lock {lock_id} by ticker {current_order.ticker}"  # noqa
             )
 
             matching_orders = await get_matching_orders(
@@ -314,6 +323,7 @@ async def process_order(
             processing_result = await processing_orders(
                 current_order, matching_orders, base_asset
             )
+            logger.info(f"Result of processing: {processing_result}")
 
             await process_order_fill(
                 current_order=current_order,
@@ -323,6 +333,14 @@ async def process_order(
                 balance_repository=balance_repository,
             )
             await outbox_message_repository.delete(current_order.id)
+            logger.info(f"Outbox message deleted by id {current_order.id}")
+        except Exception as error:
+            logger.error(
+                f"Order failed: {current_order}, {error}", exc_info=True
+            )
         finally:
             await order_repository.advisory_unlock(lock_id)
+            logger.info(
+                f"Removed advisory lock {lock_id} by ticker {current_order.ticker}"  # noqa
+            )
     await message.ack()

@@ -7,9 +7,13 @@ from application.database.repository.outbox_message_repository import (
     OutboxMessageRepository,
 )
 from application.models.database_models.order import Order
+from logger import setup_logging
+
+logger = setup_logging("rabbit_publisher")
 
 
 async def main() -> None:
+    logger.info("The producer has started")
     rabbit_client = RabbitMQClient(RABBITMQ_URL)
     await rabbit_client.connect()
     try:
@@ -28,12 +32,13 @@ async def main() -> None:
                             message.id, True
                         )
                     except Exception as error:
-                        # todo заменить на logger
-                        print(error)
-
+                        logger.error(
+                            f"The producer failed: {error}", exc_info=True
+                        )
             await asyncio.sleep(1)
     finally:
         await rabbit_client.close()
+        logger.info("The producer has stopped")
 
 
 if __name__ == "__main__":

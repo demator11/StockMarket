@@ -80,9 +80,7 @@ class OrderRepository:
             .values(**update_values)
         )
 
-    async def bulk_update(
-        self, ticker: str, orders: list[UpdateOrder]
-    ) -> None:
+    async def bulk_update(self, orders: list[UpdateOrder]) -> None:
         await self.db_session.execute(
             update(OrderOrm),
             [order.dict(exclude_none=True) for order in orders],
