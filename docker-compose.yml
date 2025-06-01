@@ -1,0 +1,69 @@
+volumes:
+  pgdata:
+  rabbitmq_data:
+
+
+services:
+  app:
+    build: .
+    container_name: stock_market_tochka
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: $SECRET_KEY
+    depends_on:
+      - db
+      - rabbitmq
+    command: ["bash", "./start_api.sh"]
+
+  db:
+    image: postgres:14
+    container_name: postgres_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: $POSTGRESQL_HOST
+      POSTGRES_PORT: $POSTGRESQL_PORT
+      POSTGRES_USER: $POSTGRESQL_USER
+      POSTGRES_PASSWORD: $POSTGRESQL_PASS
+      POSTGRES_DB: $POSTGRESQL_NAME
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  broker:
+    build: .
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["bash", "./start_broker.sh"]
+
+  outbox_publisher:
+    build: .
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: [ "bash", "./start_outbox_publisher.sh" ]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: $RABBITMQ_LOGIN
+      RABBITMQ_DEFAULT_PASS: $RABBITMQ_PASS
+    depends_on:
+      - db
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10

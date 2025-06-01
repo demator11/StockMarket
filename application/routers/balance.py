@@ -10,7 +10,7 @@ from application.di.repositories import get_balance_repository
 balance_router = APIRouter(prefix="/api/v1/balance")
 
 
-@balance_router.get("/", summary="Get Balance")
+@balance_router.get("", summary="Get Balance")
 async def get_balance(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),

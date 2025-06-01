@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from application.database.config import POSTGRESQL_URL
+from application.config import POSTGRESQL_URL
 from application.models.orm_models.user import UserOrm  # noqa
 from application.models.orm_models.balance import BalanceOrm  # noqa
 from application.models.orm_models.order import OrderOrm  # noqa

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -55,3 +56,7 @@ RABBITMQ_URL = get_rabbitmq_url(
 )
 
 JWT_SECRET_KEY = os.getenv("SECRET_KEY")
+
+
+def timestamp_utc():
+    return datetime.now(timezone.utc)

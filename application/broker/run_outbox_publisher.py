@@ -1,7 +1,7 @@
 import asyncio
 
 from application.broker.client import RabbitMQClient
-from application.database.config import RABBITMQ_URL
+from application.config import RABBITMQ_URL
 from application.database.engine import async_session_factory
 from application.database.repository.outbox_message_repository import (
     OutboxMessageRepository,

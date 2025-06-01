@@ -1,9 +1,11 @@
 import uuid
+from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
 from pydantic import Field
 
+from application.config import timestamp_utc
 from application.models.base import ModelBase
 
 
@@ -34,6 +36,7 @@ class Order(ModelBase):
     id: UUID = Field(default_factory=uuid.uuid4)
     status: OrderStatus
     user_id: UUID
+    timestamp: datetime = Field(default_factory=timestamp_utc)
     direction: OrderDirection
     ticker: str
     qty: int

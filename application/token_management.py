@@ -6,7 +6,7 @@ from fastapi import Security, HTTPException, Depends
 from fastapi.security.api_key import APIKeyHeader
 from jose import jwt
 
-from application.database.config import JWT_SECRET_KEY
+from application.config import JWT_SECRET_KEY
 from application.di.repositories import get_user_repository
 from application.database.repository.user_repository import UserRepository
 from application.models.database_models.user import UserRole
@@ -21,6 +21,7 @@ async def base_authorization(
     user_repository: UserRepository,
     required_role: UserRole | None = None,
 ) -> UUID:
+    api_key = api_key.replace("TOKEN ", "", 1)
     user = await user_repository.get_by_api_key(api_key)
     if user is None:
         raise HTTPException(

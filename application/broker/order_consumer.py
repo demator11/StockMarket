@@ -37,6 +37,7 @@ class OrderProcessingResult(BaseModel):
     withdraw_balances: list[Balance] = field(default_factory=list)
     transactions: list[Transaction] = field(default_factory=list)
     ticker_count: int = 0
+    final_cost: int = 0
 
     def add_order(self, order: UpdateOrder):
         self.changed_orders.append(order)
@@ -76,12 +77,11 @@ async def get_matching_orders(
             current_order.qty,
             OrderDirection.buy,
         )
-    else:
-        return await order_repository.get_by_ticker(
-            current_order.ticker,
-            current_order.qty,
-            OrderDirection.sell,
-        )
+    return await order_repository.get_by_ticker(
+        current_order.ticker,
+        current_order.qty,
+        OrderDirection.sell,
+    )
 
 
 async def calculate_order_fill(
@@ -189,7 +189,7 @@ async def add_current_balance(
     deposit_ticker: str,
     withdraw_ticker: str,
     result: OrderProcessingResult,
-) -> None:
+) -> OrderProcessingResult:
     deposit_qty = 0
     withdraw_qty = 0
     for balance in result.withdraw_balances:
@@ -210,6 +210,7 @@ async def add_current_balance(
             qty=withdraw_qty,
         )
     )
+    return result
 
 
 async def processing_orders(
@@ -230,8 +231,11 @@ async def processing_orders(
             result.add_withdraw_balance(fill_result.withdraw_balance)
             result.add_transaction(fill_result.transaction)
             result.ticker_count += fill_result.ticker_filled
+            result.final_cost += (
+                fill_result.transaction.price * fill_result.transaction.qty
+            )
     if fill_result:
-        await add_current_balance(
+        result = await add_current_balance(
             current_order=current_order,
             deposit_ticker=fill_result.withdraw_ticker,
             withdraw_ticker=fill_result.deposit_ticker,
@@ -293,9 +297,32 @@ async def process_order_fill(
         logger.info(f"Withdraw balances: {result.withdraw_balances}")
 
 
+async def accept_or_deny_operation(
+    current_order: Order,
+    result: OrderProcessingResult,
+    balance_repository: BalanceRepository,
+) -> OrderProcessingResult:
+    user_balance = await balance_repository.get_balance_by_user_id_and_ticker(
+        current_order.user_id, current_order.ticker
+    )
+    assert user_balance is not None
+    if user_balance.qty < result.final_cost:
+        result.clear_all()
+        result.add_order(
+            UpdateOrder(
+                id=current_order.id,
+                filled=current_order.filled,
+                status=OrderStatus.cancelled,
+                price=current_order.price,
+            )
+        )
+    return result
+
+
 async def process_order(
     message: IncomingMessage,
 ) -> None:
+    logger.info(f"New message received: {message}")
     async with async_session_factory.begin() as session:
         order_repository = OrderRepository(db_session=session)
         transaction_repository = TransactionRepository(db_session=session)
@@ -305,6 +332,8 @@ async def process_order(
 
         current_order = Order.model_validate_json(message.body.decode())
         if not await order_repository.create(current_order):
+            await message.ack()
+            logger.info(f"Message {current_order} acked")
             return
         logger.info(f"Process order has started: {current_order}")
         try:
@@ -325,6 +354,16 @@ async def process_order(
             )
             logger.info(f"Result of processing: {processing_result}")
 
+            if (
+                current_order.price is None
+                and current_order.direction == OrderDirection.buy
+            ):
+                processing_result = await accept_or_deny_operation(
+                    current_order=current_order,
+                    result=processing_result,
+                    balance_repository=balance_repository,
+                )
+
             await process_order_fill(
                 current_order=current_order,
                 result=processing_result,
@@ -344,3 +383,4 @@ async def process_order(
                 f"Removed advisory lock {lock_id} by ticker {current_order.ticker}"  # noqa
             )
     await message.ack()
+    logger.info(f"Message {current_order} acked")

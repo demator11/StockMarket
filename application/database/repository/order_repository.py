@@ -39,7 +39,14 @@ class OrderRepository:
         return Order.model_validate(result.one())
 
     async def get_all(self) -> list[Order]:
-        result = await self.db_session.scalars(select(OrderOrm))
+        result = await self.db_session.scalars(
+            select(OrderOrm).where(
+                or_(
+                    OrderOrm.status == OrderStatus.new,
+                    OrderOrm.status == OrderStatus.partially_executed,
+                )
+            )
+        )
         order_list = [Order.model_validate(order) for order in result.all()]
         return order_list
 
@@ -54,10 +61,18 @@ class OrderRepository:
     ) -> list[Order]:
         if direction is None:
             result = await self.db_session.scalars(
-                select(OrderOrm).where(OrderOrm.ticker == ticker).limit(limit)
+                select(OrderOrm)
+                .where(OrderOrm.ticker == ticker)
+                .where(
+                    or_(
+                        OrderOrm.status == OrderStatus.new,
+                        OrderOrm.status == OrderStatus.partially_executed,
+                    )
+                )
+                .limit(limit)
             )
         else:
-            result = await self.db_session.scalars(
+            stmt = (
                 select(OrderOrm)
                 .where(OrderOrm.ticker == ticker)
                 .where(OrderOrm.direction == direction)
@@ -67,8 +82,15 @@ class OrderRepository:
                         OrderOrm.status == OrderStatus.partially_executed,
                     )
                 )
-                .order_by(OrderOrm.price)
             )
+
+            if direction == OrderDirection.sell:
+                stmt = stmt.order_by(OrderOrm.price.desc(), OrderOrm.timestamp)
+            else:
+                stmt = stmt.order_by(OrderOrm.price, OrderOrm.timestamp)
+
+            result = await self.db_session.scalars(stmt)
+
         order_list = [Order.model_validate(order) for order in result.all()]
         return order_list
 

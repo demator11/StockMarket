@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select, insert, update, func, delete
+from sqlalchemy import select, insert, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.orm_models.balance import BalanceOrm
@@ -74,7 +74,7 @@ class BalanceRepository:
             return None
         return Balance.model_validate(result)
 
-    async def delete_or_update(self, withdraw: Balance) -> Balance | None:
+    async def withdraw(self, withdraw: Balance) -> Balance | None:
         ticker_exists = await self.db_session.scalars(
             select(BalanceOrm)
             .where(BalanceOrm.user_id == withdraw.user_id)
@@ -85,7 +85,8 @@ class BalanceRepository:
             return None
         elif ticker.qty < withdraw.qty:
             result = await self.db_session.scalars(
-                delete(BalanceOrm)
+                update(BalanceOrm)
+                .values(qty=0)
                 .where(BalanceOrm.user_id == withdraw.user_id)
                 .where(BalanceOrm.ticker == withdraw.ticker)
                 .returning(BalanceOrm)
@@ -99,6 +100,28 @@ class BalanceRepository:
             .returning(BalanceOrm)
         )
         return Balance.model_validate(result.one())
+
+    async def reserve(self, balance: Balance) -> None:
+        await self.db_session.scalars(
+            update(BalanceOrm)
+            .values(
+                qty=BalanceOrm.qty - balance.reserve,
+                reserve=BalanceOrm.reserve + balance.reserve,
+            )
+            .where(BalanceOrm.user_id == balance.user_id)
+            .where(BalanceOrm.ticker == balance.ticker)
+        )
+
+    async def release(self, balance: Balance) -> None:
+        await self.db_session.scalars(
+            update(BalanceOrm)
+            .values(
+                qty=BalanceOrm.qty + balance.reserve,
+                reserve=BalanceOrm.reserve - balance.reserve,
+            )
+            .where(BalanceOrm.user_id == balance.user_id)
+            .where(BalanceOrm.ticker == balance.ticker)
+        )
 
     async def bulk_adjust(
         self,
@@ -146,18 +169,13 @@ class BalanceRepository:
                 ticker_body = ticker_exists.one_or_none()
                 if ticker_body is None:
                     return None
-                elif ticker_body.qty < withdraw.qty:
+                else:
                     await self.db_session.execute(
-                        delete(BalanceOrm)
+                        update(BalanceOrm)
+                        .values(qty=BalanceOrm.reserve - withdraw.qty)
                         .where(BalanceOrm.user_id == withdraw.user_id)
                         .where(BalanceOrm.ticker == withdraw.ticker)
                     )
-                await self.db_session.execute(
-                    update(BalanceOrm)
-                    .values(qty=BalanceOrm.qty - withdraw.qty)
-                    .where(BalanceOrm.user_id == withdraw.user_id)
-                    .where(BalanceOrm.ticker == withdraw.ticker)
-                )
 
         finally:
             await self.db_session.execute(

@@ -138,7 +138,7 @@ async def withdraw_user_balance(
         ticker=withdraw_request.ticker,
         qty=withdraw_request.amount,
     )
-    result = await balance_repository.delete_or_update(withdraw)
+    result = await balance_repository.withdraw(withdraw)
     if result is None:
         raise HTTPException(
             status_code=400, detail="У пользователя отсутствует данный тикер"

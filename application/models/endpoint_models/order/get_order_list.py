@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -19,6 +20,7 @@ class LimitOrderListResponse(BaseModel):
     id: UUID
     status: OrderStatus
     user_id: UUID
+    timestamp: datetime
     body: LimitOrderBodyListResponse
     filled: int = 0
 
@@ -33,4 +35,5 @@ class MarketOrderListResponse(BaseModel):
     id: UUID
     status: OrderStatus
     user_id: UUID
+    timestamp: datetime
     body: MarketOrderBodyListResponse

@@ -1,7 +1,7 @@
 import asyncio
 
 from application.broker.client import RabbitMQClient
-from application.database.config import RABBITMQ_URL
+from application.config import RABBITMQ_URL
 from logger import setup_logging
 
 logger = setup_logging("rabbit_consumer")

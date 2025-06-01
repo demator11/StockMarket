@@ -32,7 +32,7 @@ from application.database.repository.user_repository import UserRepository
 from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
-from application.models.database_models.user import User
+from application.models.database_models.user import User, UserRole
 from application.token_management import create_access_token
 
 public_router = APIRouter(prefix="/api/v1/public")
@@ -52,7 +52,12 @@ async def register_new_user(
 
     api_key = create_access_token({"sub": new_user.name})
     new_user = User(name=new_user.name, api_key=api_key)
-    user = await user_repository.create(new_user)
+    # костыль на время тестов
+    if new_user.name == "ADMIN":
+        new_user.api_key = "super_admin_api_key_123456789tochkaonelove"
+        user = await user_repository.create(new_user, UserRole.admin)
+    else:
+        user = await user_repository.create(new_user)
     response.headers["Authorization"] = "TOKEN " + api_key
 
     return CreateUserResponse(

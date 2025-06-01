@@ -11,10 +11,10 @@ class UserRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create(self, user: User) -> User:
+    async def create(self, user: User, role: UserRole = UserRole.user) -> User:
         result = await self.db_session.scalars(
             insert(UserOrm)
-            .values(name=user.name, role=UserRole.user, api_key=user.api_key)
+            .values(name=user.name, role=role, api_key=user.api_key)
             .returning(UserOrm)
         )
         return User.model_validate(result.one())
