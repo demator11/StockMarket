@@ -34,6 +34,7 @@ class BalanceRepository:
                         user_id=deposit.user_id,
                         ticker=deposit.ticker,
                         qty=deposit.qty,
+                        reserve=deposit.reserve,
                     )
                     .returning(BalanceOrm)
                 )
@@ -102,7 +103,7 @@ class BalanceRepository:
         return Balance.model_validate(result.one())
 
     async def reserve(self, balance: Balance) -> None:
-        await self.db_session.scalars(
+        await self.db_session.execute(
             update(BalanceOrm)
             .values(
                 qty=BalanceOrm.qty - balance.reserve,
@@ -113,7 +114,7 @@ class BalanceRepository:
         )
 
     async def release(self, balance: Balance) -> None:
-        await self.db_session.scalars(
+        await self.db_session.execute(
             update(BalanceOrm)
             .values(
                 qty=BalanceOrm.qty + balance.reserve,
@@ -136,6 +137,7 @@ class BalanceRepository:
                     BalanceOrm.ticker == ticker
                 )
             )
+            print(deposit_balances)
             for deposit in deposit_balances:
                 ticker_exists = await self.db_session.scalars(
                     select(BalanceOrm)
@@ -150,6 +152,7 @@ class BalanceRepository:
                             user_id=deposit.user_id,
                             ticker=deposit.ticker,
                             qty=deposit.qty,
+                            reserve=deposit.reserve,
                         )
                     )
                 else:
@@ -172,7 +175,10 @@ class BalanceRepository:
                 else:
                     await self.db_session.execute(
                         update(BalanceOrm)
-                        .values(qty=BalanceOrm.reserve - withdraw.qty)
+                        .values(
+                            qty=BalanceOrm.qty - withdraw.qty,
+                            reserve=BalanceOrm.reserve - withdraw.reserve,
+                        )
                         .where(BalanceOrm.user_id == withdraw.user_id)
                         .where(BalanceOrm.ticker == withdraw.ticker)
                     )

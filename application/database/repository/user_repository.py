@@ -25,6 +25,12 @@ class UserRepository:
         )
         return result.one_or_none() is not None
 
+    async def exists_id_in_database(self, user_id: UUID):
+        result = await self.db_session.scalars(
+            select(UserOrm.id).where(UserOrm.id == user_id)
+        )
+        return result.one_or_none()
+
     async def get_by_api_key(self, api_key: str) -> UserOrm | None:
         result = await self.db_session.scalars(
             select(UserOrm).where(UserOrm.api_key == api_key)

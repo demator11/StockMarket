@@ -123,7 +123,7 @@ async def calculate_order_fill(
         withdraw_balance_update = Balance(
             user_id=matching_order.user_id,
             ticker=base_asset,
-            qty=ticker_filled * matching_order.price,
+            reserve=ticker_filled * matching_order.price,
         )
         deposit_ticker = matching_order.ticker
         withdraw_ticker = base_asset
@@ -136,7 +136,7 @@ async def calculate_order_fill(
         withdraw_balance_update = Balance(
             user_id=matching_order.user_id,
             ticker=matching_order.ticker,
-            qty=ticker_filled,
+            reserve=ticker_filled,
         )
         deposit_ticker = base_asset
         withdraw_ticker = matching_order.ticker
@@ -178,9 +178,13 @@ async def update_current_order_status(
 
     return UpdateOrder(
         id=current_order.id,
-        filled=current_order.filled,
         status=current_order.status,
+        user_id=current_order.user_id,
+        direction=current_order.direction,
+        ticker=current_order.ticker,
+        qty=current_order.qty,
         price=current_order.price,
+        filled=current_order.filled,
     )
 
 
@@ -190,12 +194,9 @@ async def add_current_balance(
     withdraw_ticker: str,
     result: OrderProcessingResult,
 ) -> OrderProcessingResult:
-    deposit_qty = 0
-    withdraw_qty = 0
-    for balance in result.withdraw_balances:
-        deposit_qty += balance.qty
-    for balance in result.deposit_balances:
-        withdraw_qty += balance.qty
+    withdraw_qty = sum(balance.qty for balance in result.deposit_balances)
+    deposit_qty = sum(balance.reserve for balance in result.withdraw_balances)
+
     result.add_deposit_balance(
         Balance(
             user_id=current_order.user_id,
@@ -203,13 +204,55 @@ async def add_current_balance(
             qty=deposit_qty,
         )
     )
-    result.add_withdraw_balance(
-        Balance(
-            user_id=current_order.user_id,
-            ticker=withdraw_ticker,
-            qty=withdraw_qty,
+    if current_order.price is None:
+        if current_order.direction == OrderDirection.sell:
+            result.add_withdraw_balance(
+                Balance(
+                    user_id=current_order.user_id,
+                    ticker=withdraw_ticker,
+                    reserve=withdraw_qty,
+                )
+            )
+        else:
+            result.add_withdraw_balance(
+                Balance(
+                    user_id=current_order.user_id,
+                    ticker=withdraw_ticker,
+                    qty=withdraw_qty,
+                )
+            )
+    else:
+        result.add_withdraw_balance(
+            Balance(
+                user_id=current_order.user_id,
+                ticker=withdraw_ticker,
+                reserve=withdraw_qty,
+            )
         )
-    )
+    return result
+
+
+async def processing_cancelled_order(
+    updated_current_order: UpdateOrder,
+    result: OrderProcessingResult,
+):
+    result.clear_all()
+    result.add_order(updated_current_order)
+    if updated_current_order.direction == OrderDirection.sell:
+        result.add_deposit_balance(
+            Balance(
+                user_id=updated_current_order.user_id,
+                ticker=updated_current_order.ticker,
+                qty=updated_current_order.qty,
+            )
+        )
+        result.add_withdraw_balance(
+            Balance(
+                user_id=updated_current_order.user_id,
+                ticker=updated_current_order.ticker,
+                reserve=updated_current_order.qty,
+            )
+        )
     return result
 
 
@@ -234,22 +277,23 @@ async def processing_orders(
             result.final_cost += (
                 fill_result.transaction.price * fill_result.transaction.qty
             )
-    if fill_result:
+
+    updated_current_order = await update_current_order_status(
+        current_order, result.ticker_count
+    )
+    if current_order.status == OrderStatus.cancelled:
+        result = await processing_cancelled_order(
+            updated_current_order=updated_current_order, result=result
+        )
+    elif current_order.filled > 0:
+        assert fill_result is not None
+        result.add_order(updated_current_order)
         result = await add_current_balance(
             current_order=current_order,
             deposit_ticker=fill_result.withdraw_ticker,
             withdraw_ticker=fill_result.deposit_ticker,
             result=result,
         )
-    updated_current_order = await update_current_order_status(
-        current_order, result.ticker_count
-    )
-    if current_order.status == OrderStatus.cancelled:
-        result.clear_all()
-        result.add_order(updated_current_order)
-    elif current_order.filled > 0:
-        result.add_order(updated_current_order)
-
     return result
 
 
@@ -292,6 +336,7 @@ async def process_order_fill(
     if result.transactions:
         await create_transactions(result.transactions, transaction_repository)
         logger.info(f"Create transactions: {result.transactions}")
+    if result.deposit_balances:
         await update_balances(current_order, result, balance_repository)
         logger.info(f"Deposit balances: {result.deposit_balances}")
         logger.info(f"Withdraw balances: {result.withdraw_balances}")
@@ -299,11 +344,12 @@ async def process_order_fill(
 
 async def accept_or_deny_operation(
     current_order: Order,
+    base_asset: str,
     result: OrderProcessingResult,
     balance_repository: BalanceRepository,
 ) -> OrderProcessingResult:
     user_balance = await balance_repository.get_balance_by_user_id_and_ticker(
-        current_order.user_id, current_order.ticker
+        current_order.user_id, base_asset
     )
     assert user_balance is not None
     if user_balance.qty < result.final_cost:
@@ -316,6 +362,7 @@ async def accept_or_deny_operation(
                 price=current_order.price,
             )
         )
+        logger.info(f"Operation denied: {result}")
     return result
 
 
@@ -331,12 +378,14 @@ async def process_order(
         app_config_repository = AppConfigRepository(db_session=session)
 
         current_order = Order.model_validate_json(message.body.decode())
-        if not await order_repository.create(current_order):
-            await message.ack()
-            logger.info(f"Message {current_order} acked")
-            return
-        logger.info(f"Process order has started: {current_order}")
         try:
+            if not await order_repository.create(current_order):
+                await outbox_message_repository.delete(current_order.id)
+                logger.info(f"Outbox message deleted by id {current_order.id}")
+                await message.ack()
+                logger.info(f"Message {current_order} acked")
+                return
+            logger.info(f"Process order has started: {current_order}")
             lock_id = await order_repository.advisory_lock_by_ticker(
                 current_order.ticker
             )
@@ -360,6 +409,7 @@ async def process_order(
             ):
                 processing_result = await accept_or_deny_operation(
                     current_order=current_order,
+                    base_asset=base_asset,
                     result=processing_result,
                     balance_repository=balance_repository,
                 )

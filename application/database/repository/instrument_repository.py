@@ -21,15 +21,13 @@ class InstrumentRepository:
         return Instrument.model_validate(result.one())
 
     async def exists_in_database(self, ticker: str) -> bool:
-        query = select(InstrumentOrm.ticker).where(
-            InstrumentOrm.ticker == ticker
+        result = await self.db_session.scalars(
+            select(InstrumentOrm.ticker).where(InstrumentOrm.ticker == ticker)
         )
-        result = await self.db_session.scalars(query)
         return result.one_or_none() is not None
 
     async def get_all(self) -> list[Instrument]:
-        query = select(InstrumentOrm)
-        result = await self.db_session.scalars(query)
+        result = await self.db_session.scalars(select(InstrumentOrm))
         return [Instrument.model_validate(row) for row in result.all()]
 
     async def delete(self, ticker: str) -> None:

@@ -2,18 +2,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from application.database.repository.app_config_repository import (
-    AppConfigRepository,
-)
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
-from application.models.database_models.app_config import AppConfig
 from application.models.database_models.balance import Balance
-from application.models.database_models.user import UserRole
-from application.models.endpoint_models.admin.create_config import (
-    CreateConfigRequest,
-)
 from application.models.endpoint_models.admin.create_instrument import (
     CreateInstrumentRequest,
 )
@@ -37,12 +29,10 @@ from application.di.repositories import (
     get_instrument_repository,
     get_user_repository,
     get_balance_repository,
-    get_app_config_repository,
 )
 from application.models.database_models.instrument import Instrument
 from application.token_management import (
     admin_authorization,
-    user_authorization,
 )
 
 
@@ -110,12 +100,19 @@ async def deposit_user_balance(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
+    user_repository: UserRepository = Depends(get_user_repository),
 ) -> SuccessResponse:
     deposit = Balance(
         user_id=deposit_request.user_id,
         ticker=deposit_request.ticker,
         qty=deposit_request.amount,
     )
+    user_exists = await user_repository.exists_id_in_database(deposit.user_id)
+    if not user_exists:
+        raise HTTPException(
+            status_code=400, detail="Данного пользователя не существует"
+        )
+
     ticker_exists = await instrument_repository.exists_in_database(
         deposit.ticker
     )
@@ -132,12 +129,18 @@ async def withdraw_user_balance(
     withdraw_request: WithdrawUserBalanceRequest,
     authorization: UUID = Depends(admin_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ) -> SuccessResponse:
     withdraw = Balance(
         user_id=withdraw_request.user_id,
         ticker=withdraw_request.ticker,
         qty=withdraw_request.amount,
     )
+    user_exists = await user_repository.exists_id_in_database(withdraw.user_id)
+    if not user_exists:
+        raise HTTPException(
+            status_code=400, detail="Данного пользователя не существует"
+        )
     result = await balance_repository.withdraw(withdraw)
     if result is None:
         raise HTTPException(
@@ -146,23 +149,23 @@ async def withdraw_user_balance(
     return SuccessResponse()
 
 
-@admin_router.post("/")
-async def get_admin_role(
-    authorization: UUID = Depends(user_authorization),
-    user_repository: UserRepository = Depends(get_user_repository),
-):
-    await user_repository.change_user_role(authorization, UserRole.admin)
-    return SuccessResponse()
-
-
-@admin_router.post("/config/create")
-async def create_config(
-    new_config: CreateConfigRequest,
-    authorization: UUID = Depends(admin_authorization),
-    config_repository: AppConfigRepository = Depends(
-        get_app_config_repository
-    ),
-) -> SuccessResponse:
-    config = AppConfig(key=new_config.key, value=new_config.value)
-    await config_repository.upsert(config)
-    return SuccessResponse()
+# @admin_router.post("/")
+# async def get_admin_role(
+#     authorization: UUID = Depends(user_authorization),
+#     user_repository: UserRepository = Depends(get_user_repository),
+# ):
+#     await user_repository.change_user_role(authorization, UserRole.admin)
+#     return SuccessResponse()
+#
+#
+# @admin_router.post("/config/create")
+# async def create_config(
+#     new_config: CreateConfigRequest,
+#     authorization: UUID = Depends(admin_authorization),
+#     config_repository: AppConfigRepository = Depends(
+#         get_app_config_repository
+#     ),
+# ) -> SuccessResponse:
+#     config = AppConfig(key=new_config.key, value=new_config.value)
+#     await config_repository.upsert(config)
+#     return SuccessResponse()
