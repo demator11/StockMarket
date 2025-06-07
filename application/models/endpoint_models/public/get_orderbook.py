@@ -1,11 +1,11 @@
 from pydantic import BaseModel
 
 
-class LevelResponse(BaseModel):
+class Level(BaseModel):
     price: int
     qty: int
 
 
 class GetOrderbookResponse(BaseModel):
-    bid_levels: list[LevelResponse]
-    ask_levels: list[LevelResponse]
+    bid_levels: list[Level]
+    ask_levels: list[Level]

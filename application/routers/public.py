@@ -10,7 +10,7 @@ from application.models.database_models.order import (
 )
 from application.models.endpoint_models.public.get_orderbook import (
     GetOrderbookResponse,
-    LevelResponse,
+    Level,
 )
 from application.models.endpoint_models.public.get_transaction_history import (
     GetTransactionHistoryResponse,
@@ -99,10 +99,14 @@ async def get_orderbook(
         ):
             continue
         if order.direction == OrderDirection.sell:
-            ask_levels.append(LevelResponse(price=order.price, qty=order.qty))
+            ask_levels.append(
+                Level(price=order.price, qty=order.qty - order.filled)
+            )
         else:
-            bid_levels.append(LevelResponse(price=order.price, qty=order.qty))
-
+            bid_levels.append(
+                Level(price=order.price, qty=order.qty - order.filled)
+            )
+    print(f"Ордербук {ask_levels=}, {bid_levels=}")
     return GetOrderbookResponse(ask_levels=ask_levels, bid_levels=bid_levels)
 
 
@@ -121,7 +125,7 @@ async def get_transaction_history(
             GetTransactionHistoryResponse(
                 id=transaction.id,
                 ticker=transaction.ticker,
-                qty=transaction.qty,
+                amount=transaction.qty,
                 price=transaction.price,
                 timestamp=transaction.timestamp,
             )

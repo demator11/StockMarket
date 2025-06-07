@@ -14,7 +14,6 @@ services:
       SECRET_KEY: $SECRET_KEY
     depends_on:
       - db
-      - rabbitmq
     command: ["bash", "./start_api.sh"]
 
   db:
@@ -33,37 +32,3 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  broker:
-    build: .
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    command: ["bash", "./start_broker.sh"]
-
-  outbox_publisher:
-    build: .
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    command: [ "bash", "./start_outbox_publisher.sh" ]
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: $RABBITMQ_LOGIN
-      RABBITMQ_DEFAULT_PASS: $RABBITMQ_PASS
-    depends_on:
-      - db
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
-      interval: 5s
-      timeout: 10s
-      retries: 10

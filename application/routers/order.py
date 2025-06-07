@@ -1,4 +1,3 @@
-import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -13,8 +12,8 @@ from application.database.repository.balance_repository import (
 from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
-from application.database.repository.outbox_message_repository import (
-    OutboxMessageRepository,
+from application.database.repository.transaction_repository import (
+    TransactionRepository,
 )
 from application.models.database_models.balance import Balance
 from application.models.database_models.order import (
@@ -23,21 +22,21 @@ from application.models.database_models.order import (
     Order,
     OrderDirection,
 )
-from application.models.database_models.outbox_message import OutboxMessage
 from application.models.endpoint_models.order.get_order_list import (
     LimitOrderListResponse,
     LimitOrderBodyListResponse,
     MarketOrderListResponse,
     MarketOrderBodyListResponse,
 )
+from application.order_consumer import process_order
 from application.token_management import user_authorization
 from application.database.repository.order_repository import OrderRepository
 from application.di.repositories import (
     get_order_repository,
-    get_outbox_message_repository,
     get_app_config_repository,
     get_instrument_repository,
     get_balance_repository,
+    get_transaction_repository,
 )
 from application.models.endpoint_models.order.get_order_by_id import (
     LimitOrderByIdResponse,
@@ -60,9 +59,6 @@ order_router = APIRouter(prefix="/api/v1/order")
 async def create_order(
     new_order: CreateOrderRequest,
     authorization: UUID = Depends(user_authorization),
-    outbox_message_repository: OutboxMessageRepository = Depends(
-        get_outbox_message_repository
-    ),
     app_config_repository: AppConfigRepository = Depends(
         get_app_config_repository
     ),
@@ -70,6 +66,10 @@ async def create_order(
         get_instrument_repository
     ),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
+    order_repository: OrderRepository = Depends(get_order_repository),
+    transaction_repository: TransactionRepository = Depends(
+        get_transaction_repository
+    ),
 ) -> CreateOrderResponse:
     order_body = Order(
         status=OrderStatus.new,
@@ -80,6 +80,7 @@ async def create_order(
         qty=new_order.qty,
         price=new_order.price,
     )
+
     base_asset = await app_config_repository.get("base_asset") or "RUB"
     if order_body.ticker == base_asset:
         raise HTTPException(
@@ -95,59 +96,19 @@ async def create_order(
             status_code=400, detail="Данного тикера не существует"
         )
 
-    user_base_asset_balance = (
-        await balance_repository.get_balance_by_user_id_and_ticker(
-            authorization, base_asset
-        )
+    result = await process_order(
+        current_order=order_body,
+        balance_repository=balance_repository,
+        order_repository=order_repository,
+        transaction_repository=transaction_repository,
+        app_config_repository=app_config_repository,
     )
-    user_current_ticker_balance = (
-        await balance_repository.get_balance_by_user_id_and_ticker(
-            authorization, order_body.ticker
+
+    if result.status_code != 200:
+        raise HTTPException(
+            status_code=result.status_code, detail=result.detail
         )
-    )
-    if order_body.direction == OrderDirection.sell:
-        if user_current_ticker_balance is None:
-            raise HTTPException(
-                status_code=400,
-                detail=f"{order_body.ticker} отсутствует на балансе",
-            )
-        elif user_current_ticker_balance.qty < order_body.qty:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Недостаточно {user_current_ticker_balance.ticker} на балансе",  # noqa
-            )
-        await balance_repository.reserve(
-            Balance(
-                user_id=order_body.user_id,
-                ticker=order_body.ticker,
-                reserve=order_body.qty,
-            )
-        )
-    else:
-        if user_base_asset_balance is None:
-            raise HTTPException(
-                status_code=400, detail=f"{base_asset} отсутствует на балансе"
-            )
-        elif order_body.price is not None:
-            if user_base_asset_balance.qty < order_body.price * order_body.qty:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Недостаточно {user_base_asset_balance.ticker} на балансе",  # noqa
-                )
-            await balance_repository.reserve(
-                Balance(
-                    user_id=order_body.user_id,
-                    ticker=user_base_asset_balance.ticker,
-                    reserve=order_body.price * order_body.qty,
-                )
-            )
-    await outbox_message_repository.create(
-        OutboxMessage(
-            id=order_body.id, payload=str(order_body.model_dump_json())
-        )
-    )
-    # костыль
-    await asyncio.sleep(0.5)
+
     return CreateOrderResponse(order_id=order_body.id)
 
 
@@ -201,7 +162,7 @@ async def get_order_by_id(
 ) -> LimitOrderByIdResponse | MarketOrderByIdResponse:
     order = await order_repository.get_by_id(order_id)
     if order is None:
-        raise HTTPException(status_code=404, detail="Ордер не найден")
+        raise HTTPException(status_code=400, detail="Ордер не найден")
     if order.price is None:
         return MarketOrderByIdResponse(
             id=order.id,
@@ -235,23 +196,42 @@ async def cancel_order_by_id(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
+    app_config_repository: AppConfigRepository = Depends(
+        get_app_config_repository
+    ),
 ) -> SuccessResponse:
     order = await order_repository.get_by_id(order_id)
     if order is None:
-        raise HTTPException(status_code=404, detail="Ордер не найден")
+        raise HTTPException(status_code=400, detail="Ордер не найден")
     elif order.status == OrderStatus.cancelled:
-        raise HTTPException(status_code=406, detail="Ордер уже отменён")
+        raise HTTPException(status_code=400, detail="Ордер уже отменён")
+    elif order.status == OrderStatus.executed:
+        raise HTTPException(status_code=400, detail="Ордер уже исполнен")
+    elif order.user_id != authorization:
+        raise HTTPException(
+            status_code=400, detail="Вы не можете отменить данный ордер"
+        )
 
+    base_asset = await app_config_repository.get("base_asset") or "RUB"
     await order_repository.update(
         UpdateOrder(id=order_id, status=OrderStatus.cancelled)
     )
     assert order.price is not None
-    await balance_repository.release(
-        Balance(
-            user_id=authorization,
-            ticker=order.ticker,
-            reserve=order.price * (order.qty - order.filled),
+    if order.direction == OrderDirection.sell:
+        await balance_repository.release(
+            Balance(
+                user_id=authorization,
+                ticker=order.ticker,
+                reserve=order.qty - order.filled,
+            )
         )
-    )
+    else:
+        await balance_repository.release(
+            Balance(
+                user_id=authorization,
+                ticker=base_asset,
+                reserve=order.price * (order.qty - order.filled),
+            )
+        )
 
     return SuccessResponse()

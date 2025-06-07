@@ -126,64 +126,68 @@ class BalanceRepository:
 
     async def bulk_adjust(
         self,
-        ticker: str,
         deposit_balances: list[Balance],
         withdraw_balances: list[Balance],
     ) -> None:
-        lock_id = hash(ticker)
-        try:
-            await self.db_session.execute(
-                select(func.pg_advisory_lock(lock_id)).where(
-                    BalanceOrm.ticker == ticker
-                )
+        sorted_deposit_balances = sorted(
+            deposit_balances, key=lambda x: x.user_id
+        )
+        for deposit in sorted_deposit_balances:
+            ticker_exists = await self.db_session.scalars(
+                select(BalanceOrm)
+                .where(BalanceOrm.user_id == deposit.user_id)
+                .where(BalanceOrm.ticker == deposit.ticker)
             )
-            print(deposit_balances)
-            for deposit in deposit_balances:
-                ticker_exists = await self.db_session.scalars(
-                    select(BalanceOrm)
+            ticker_body = ticker_exists.one_or_none()
+
+            if ticker_body is None:
+                await self.db_session.execute(
+                    insert(BalanceOrm).values(
+                        user_id=deposit.user_id,
+                        ticker=deposit.ticker,
+                        qty=deposit.qty,
+                        reserve=deposit.reserve,
+                    )
+                )
+            else:
+                await self.db_session.execute(
+                    update(BalanceOrm)
+                    .values(qty=ticker_body.qty + deposit.qty)
                     .where(BalanceOrm.user_id == deposit.user_id)
                     .where(BalanceOrm.ticker == deposit.ticker)
                 )
-                ticker_body = ticker_exists.one_or_none()
 
-                if ticker_body is None:
-                    await self.db_session.execute(
-                        insert(BalanceOrm).values(
-                            user_id=deposit.user_id,
-                            ticker=deposit.ticker,
-                            qty=deposit.qty,
-                            reserve=deposit.reserve,
-                        )
+        sorted_withdraw_balances = sorted(
+            withdraw_balances, key=lambda x: x.user_id
+        )
+        for withdraw in sorted_withdraw_balances:
+            ticker_exists = await self.db_session.scalars(
+                select(BalanceOrm)
+                .where(BalanceOrm.user_id == withdraw.user_id)
+                .where(BalanceOrm.ticker == withdraw.ticker)
+            )
+            ticker_body = ticker_exists.one_or_none()
+            if ticker_body is None:
+                return None
+            else:
+                await self.db_session.execute(
+                    update(BalanceOrm)
+                    .values(
+                        qty=BalanceOrm.qty - withdraw.qty,
+                        reserve=BalanceOrm.reserve - withdraw.reserve,
                     )
-                else:
-                    await self.db_session.execute(
-                        update(BalanceOrm)
-                        .values(qty=ticker_body.qty + deposit.qty)
-                        .where(BalanceOrm.user_id == deposit.user_id)
-                        .where(BalanceOrm.ticker == deposit.ticker)
-                    )
-
-            for withdraw in withdraw_balances:
-                ticker_exists = await self.db_session.scalars(
-                    select(BalanceOrm)
                     .where(BalanceOrm.user_id == withdraw.user_id)
                     .where(BalanceOrm.ticker == withdraw.ticker)
                 )
-                ticker_body = ticker_exists.one_or_none()
-                if ticker_body is None:
-                    return None
-                else:
-                    await self.db_session.execute(
-                        update(BalanceOrm)
-                        .values(
-                            qty=BalanceOrm.qty - withdraw.qty,
-                            reserve=BalanceOrm.reserve - withdraw.reserve,
-                        )
-                        .where(BalanceOrm.user_id == withdraw.user_id)
-                        .where(BalanceOrm.ticker == withdraw.ticker)
-                    )
 
-        finally:
-            await self.db_session.execute(
-                select(func.pg_advisory_unlock(lock_id))
+    async def advisory_lock_by_ticker(self, ticker) -> int:
+        lock_id = hash(ticker)
+        await self.db_session.execute(
+            select(func.pg_advisory_lock(lock_id)).where(
+                BalanceOrm.ticker == ticker
             )
+        )
+        return lock_id
+
+    async def advisory_unlock(self, lock_id: int) -> None:
+        await self.db_session.execute(select(func.pg_advisory_unlock(lock_id)))

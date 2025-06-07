@@ -85,9 +85,11 @@ class OrderRepository:
             )
 
             if direction == OrderDirection.sell:
-                stmt = stmt.order_by(OrderOrm.price.desc(), OrderOrm.timestamp)
+                stmt = stmt.order_by(OrderOrm.price, OrderOrm.timestamp.desc())
             else:
-                stmt = stmt.order_by(OrderOrm.price, OrderOrm.timestamp)
+                stmt = stmt.order_by(
+                    OrderOrm.price.desc(), OrderOrm.timestamp.desc()
+                )
 
             result = await self.db_session.scalars(stmt)
 

@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import Field
 
+from application.config import timestamp_utc
 from application.models.base import ModelBase
 
 
@@ -12,4 +13,4 @@ class Transaction(ModelBase):
     ticker: str
     qty: int
     price: int
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=timestamp_utc)

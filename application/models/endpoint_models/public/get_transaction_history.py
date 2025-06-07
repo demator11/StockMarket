@@ -7,6 +7,6 @@ from pydantic import BaseModel
 class GetTransactionHistoryResponse(BaseModel):
     id: UUID
     ticker: str
-    qty: int
+    amount: int
     price: int
     timestamp: datetime

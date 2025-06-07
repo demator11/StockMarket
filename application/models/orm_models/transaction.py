@@ -1,10 +1,11 @@
 import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import func
+from sqlalchemy import func, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import FetchedValue
 
+from application.config import timestamp_utc
 from application.database.engine import Base
 
 
@@ -18,5 +19,8 @@ class TransactionOrm(Base):
     qty: Mapped[int]
     price: Mapped[int]
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        default=datetime.datetime.now(), server_default=func.now()
+        DateTime(timezone=True),
+        default=timestamp_utc,
+        server_default=func.now(),
+        nullable=False,
     )
