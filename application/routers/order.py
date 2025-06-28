@@ -41,8 +41,8 @@ from application.di.repositories import (
 from application.models.endpoint_models.order.get_order_by_id import (
     LimitOrderByIdResponse,
     MarketOrderByIdResponse,
-    MarketOrderBodyByIdResponse,
-    LimitOrderBodyByIdResponse,
+    MarketOrderBody,
+    LimitOrderBody,
 )
 from application.models.endpoint_models.order.create_order import (
     CreateOrderRequest,
@@ -51,8 +51,10 @@ from application.models.endpoint_models.order.create_order import (
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
+from logger import setup_logging
 
 order_router = APIRouter(prefix="/api/v1/order")
+logger = setup_logging(__name__)
 
 
 @order_router.post("", summary="Create Order")
@@ -117,7 +119,7 @@ async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> list[LimitOrderListResponse | MarketOrderListResponse]:
-    result = await order_repository.get_all()
+    result = await order_repository.get_all_by_user_id(authorization)
     order_list = []
     for order in result:
         if order.price is None:
@@ -169,7 +171,7 @@ async def get_order_by_id(
             status=order.status,
             user_id=order.user_id,
             timestamp=order.timestamp,
-            body=MarketOrderBodyByIdResponse(
+            body=MarketOrderBody(
                 direction=order.direction,
                 ticker=order.ticker,
                 qty=order.qty,
@@ -180,7 +182,7 @@ async def get_order_by_id(
         status=order.status,
         user_id=order.user_id,
         timestamp=order.timestamp,
-        body=LimitOrderBodyByIdResponse(
+        body=LimitOrderBody(
             direction=order.direction,
             ticker=order.ticker,
             qty=order.qty,
@@ -202,12 +204,13 @@ async def cancel_order_by_id(
 ) -> SuccessResponse:
     order = await order_repository.get_by_id(order_id)
     if order is None:
+        logger.info("Order not found")
         raise HTTPException(status_code=400, detail="Ордер не найден")
-    elif order.status == OrderStatus.cancelled:
-        raise HTTPException(status_code=400, detail="Ордер уже отменён")
-    elif order.status == OrderStatus.executed:
-        raise HTTPException(status_code=400, detail="Ордер уже исполнен")
+    elif order.status != OrderStatus.new:
+        logger.info(f"Order cannot be cancelled, status: {order.status}")
+        raise HTTPException(status_code=409, detail="Ордер нельзя отменить")
     elif order.user_id != authorization:
+        logger.info("Another user's request")
         raise HTTPException(
             status_code=400, detail="Вы не можете отменить данный ордер"
         )

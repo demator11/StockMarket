@@ -9,7 +9,8 @@ from application.models.database_models.order import (
 )
 
 
-class LimitOrderBodyByIdResponse(BaseModel):
+# LimitOrderBodyByIdResponse
+class LimitOrderBody(BaseModel):
     direction: OrderDirection
     ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
     qty: int = Field(ge=1)
@@ -21,11 +22,12 @@ class LimitOrderByIdResponse(BaseModel):
     status: OrderStatus
     user_id: UUID
     timestamp: datetime
-    body: LimitOrderBodyByIdResponse
+    body: LimitOrderBody
     filled: int = 0
 
 
-class MarketOrderBodyByIdResponse(BaseModel):
+# MarketOrderBodyByIdResponse
+class MarketOrderBody(BaseModel):
     direction: OrderDirection
     ticker: str = Field(pattern=r"^[A-Z]{2,10}$")
     qty: int = Field(ge=1)
@@ -36,4 +38,4 @@ class MarketOrderByIdResponse(BaseModel):
     status: OrderStatus
     user_id: UUID
     timestamp: datetime
-    body: MarketOrderBodyByIdResponse
+    body: MarketOrderBody

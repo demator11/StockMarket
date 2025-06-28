@@ -1,7 +1,7 @@
 import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, DateTime
+from sqlalchemy import func, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import FetchedValue
 
@@ -15,7 +15,12 @@ class TransactionOrm(Base):
     id: Mapped[UUID] = mapped_column(
         primary_key=True, default=uuid4, server_default=FetchedValue()
     )
-    ticker: Mapped[str] = mapped_column(index=True)
+    ticker: Mapped[str] = mapped_column(
+        ForeignKey(
+            "instrument.ticker", ondelete="CASCADE", onupdate="CASCADE"
+        ),
+        index=True,
+    )
     qty: Mapped[int]
     price: Mapped[int]
     timestamp: Mapped[datetime.datetime] = mapped_column(

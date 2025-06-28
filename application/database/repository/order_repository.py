@@ -38,13 +38,14 @@ class OrderRepository:
         )
         return Order.model_validate(result.one())
 
-    async def get_all(self) -> list[Order]:
+    async def get_all_by_user_id(self, user_id: UUID) -> list[Order]:
         result = await self.db_session.scalars(
             select(OrderOrm).where(
-                or_(
-                    OrderOrm.status == OrderStatus.new,
-                    OrderOrm.status == OrderStatus.partially_executed,
-                )
+                OrderOrm.user_id == user_id,
+                # or_(
+                #     OrderOrm.status == OrderStatus.new,
+                #     OrderOrm.status == OrderStatus.partially_executed,
+                # )
             )
         )
         order_list = [Order.model_validate(order) for order in result.all()]
@@ -85,11 +86,9 @@ class OrderRepository:
             )
 
             if direction == OrderDirection.sell:
-                stmt = stmt.order_by(OrderOrm.price, OrderOrm.timestamp.desc())
+                stmt = stmt.order_by(OrderOrm.price, OrderOrm.timestamp)
             else:
-                stmt = stmt.order_by(
-                    OrderOrm.price.desc(), OrderOrm.timestamp.desc()
-                )
+                stmt = stmt.order_by(OrderOrm.price.desc(), OrderOrm.timestamp)
 
             result = await self.db_session.scalars(stmt)
 
