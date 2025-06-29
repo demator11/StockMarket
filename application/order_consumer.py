@@ -65,6 +65,10 @@ class OrderFinalResult(BaseModel):
 async def get_matching_orders(
     current_order: Order, order_repository: OrderRepository
 ) -> list[Order]:
+    """
+    Возвращает список ордеров, которые соответствуют текущему
+    ордеру по тикеру и количеству.
+    """
     if current_order.direction == OrderDirection.sell:
         return await order_repository.get_by_ticker(
             current_order.ticker,
@@ -86,6 +90,10 @@ async def update_result(
     base_asset: str,
     result: OrderProcessingResult,
 ) -> OrderProcessingResult:
+    """
+    Обновляет результат обработки ордера, добавляя информацию о сделке,
+    измененных балансах и транзакциях.
+    """
     assert matching_order.price is not None
     if current_order.price is not None:
         difference = abs(current_order.price - matching_order.price)
@@ -199,6 +207,10 @@ async def calculate_order_fill(
     base_asset: str,
     result: OrderProcessingResult,
 ) -> OrderProcessingResult:
+    """
+    Вычисляет, сколько тикеров может быть заполнено в текущем ордере,
+    и обновляет статусы ордеров.
+    """
     need = current_order.qty - filled_so_far
     available = matching_order.qty - matching_order.filled
     assert matching_order.price is not None
@@ -243,6 +255,9 @@ async def calculate_order_fill(
 async def update_current_order_status(
     current_order: Order, ticker_count: int
 ) -> UpdateOrder:
+    """
+    Обновляет статус текущего ордера на основе количества заполненных тикеров.
+    """
     current_order.filled = ticker_count
     if (
         current_order.price is None
@@ -270,6 +285,10 @@ async def processing_cancelled_order(
     updated_current_order: UpdateOrder,
     result: OrderProcessingResult,
 ):
+    """
+    Обрабатывает отмененный ордер, очищая предыдущие результаты
+    и добавляя информацию о возврате средств.
+    """
     result.clear_all()
     result.add_order(updated_current_order)
     result.status_code = 400
@@ -295,6 +314,10 @@ async def processing_cancelled_order(
 async def processing_orders(
     current_order: Order, matching_orders: list[Order], base_asset: str
 ) -> OrderProcessingResult:
+    """
+    Основная функция обработки списка ордеров.
+    Последовательно обрабатывает каждый ордер из списка matching_orders.
+    """
     result = OrderProcessingResult()
     for order in matching_orders:
         if result.ticker_count >= current_order.qty:
@@ -350,6 +373,9 @@ async def process_order_fill(
     transaction_repository: TransactionRepository,
     balance_repository: BalanceRepository,
 ) -> None:
+    """
+    Применяет все изменения: обновляет ордера и балансы, создает транзакции.
+    """
     if result.changed_orders:
         await update_orders(result.changed_orders, order_repository)
         logger.info(f"Update orders: {result.changed_orders}")
@@ -369,6 +395,10 @@ async def accept_or_deny_operation(
     result: OrderProcessingResult,
     balance_repository: BalanceRepository,
 ) -> OrderProcessingResult:
+    """
+    Проверяет, достаточно ли средств для выполнения ордера,
+    и либо подтверждает, либо отклоняет операцию.
+    """
     user_balance = await balance_repository.get_balance_by_user_id_and_ticker(
         current_order.user_id, base_asset
     )
@@ -394,6 +424,10 @@ async def check_and_reserve_balance(
     base_asset: str,
     balance_repository: BalanceRepository,
 ) -> OrderFinalResult | None:
+    """
+    Проверяет баланс пользователя и резервирует средства для ордера.
+    Возвращает ошибку, если средств недостаточно.
+    """
     user_base_asset_balance = (
         await balance_repository.get_balance_by_user_id_and_ticker(
             current_order.user_id, base_asset
@@ -459,6 +493,15 @@ async def process_order(
     transaction_repository: TransactionRepository,
     app_config_repository: AppConfigRepository,
 ) -> OrderFinalResult:
+    """
+    Основная функция обработки ордера:
+    1. Блокирует ресурсы
+    2. Проверяет и резервирует баланс
+    3. Находит совпадающие ордера
+    4. Обрабатывает сделки
+    5. Применяет изменения
+    6. Разблокирует ресурсы
+    """
     logger.info(f"New order received: {current_order}")
     order_lock_id = await order_repository.advisory_lock_by_ticker(
         current_order.ticker

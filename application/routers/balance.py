@@ -15,5 +15,8 @@ async def get_balance(
     authorization: UUID = Depends(user_authorization),
     balance_repository: BalanceRepository = Depends(get_balance_repository),
 ) -> dict:
+    """
+    Получает все балансы авторизованного пользователя
+    """
     result = await balance_repository.get_balances_by_user_id(authorization)
     return {row.ticker: row.qty + row.reserve for row in result}

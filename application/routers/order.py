@@ -73,6 +73,9 @@ async def create_order(
         get_transaction_repository
     ),
 ) -> CreateOrderResponse:
+    """
+    Создает новый торговый ордер для авторизованного пользователя
+    """
     order_body = Order(
         status=OrderStatus.new,
         user_id=authorization,
@@ -119,6 +122,9 @@ async def get_orders_list(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> list[LimitOrderListResponse | MarketOrderListResponse]:
+    """
+    Получает список всех ордеров авторизованного пользователя
+    """
     result = await order_repository.get_all_by_user_id(authorization)
     order_list = []
     for order in result:
@@ -162,6 +168,9 @@ async def get_order_by_id(
     authorization: UUID = Depends(user_authorization),
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> LimitOrderByIdResponse | MarketOrderByIdResponse:
+    """
+    Получает информацию об ордере по ID
+    """
     order = await order_repository.get_by_id(order_id)
     if order is None:
         raise HTTPException(status_code=400, detail="Ордер не найден")
@@ -202,6 +211,9 @@ async def cancel_order_by_id(
         get_app_config_repository
     ),
 ) -> SuccessResponse:
+    """
+    Отменяет новый ордер авторизованного пользователя по ID
+    """
     order = await order_repository.get_by_id(order_id)
     if order is None:
         logger.info("Order not found")

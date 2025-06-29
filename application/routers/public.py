@@ -50,6 +50,9 @@ async def register_new_user(
     response: Response,
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> CreateUserResponse:
+    """
+    Регистрирует нового пользователя по нику
+    """
     user_exists = await user_repository.exists_in_database(new_user.name)
     if user_exists:
         raise HTTPException(
@@ -77,6 +80,9 @@ async def list_instrument(
         get_instrument_repository
     ),
 ) -> list[InstrumentListResponse]:
+    """
+    Получает список инструментов
+    """
     result = await instrument_repository.get_all()
     instrument_list = []
     for instrument in result:
@@ -94,6 +100,9 @@ async def get_orderbook(
     limit: int = 10,
     order_repository: OrderRepository = Depends(get_order_repository),
 ) -> GetOrderbookResponse:
+    """
+    Получает стакан ордеров по заданному тикеру
+    """
     if limit <= 0:
         limit = 10
     orders = await order_repository.get_by_ticker(ticker, limit)
@@ -135,6 +144,9 @@ async def get_transaction_history(
         get_transaction_repository
     ),
 ) -> list[GetTransactionHistoryResponse]:
+    """
+    Получает список транзакций по заданному тикеру
+    """
     transactions = await transaction_repository.get(ticker, limit)
     result = []
     for transaction in transactions:
@@ -160,9 +172,14 @@ async def get_candles(
         get_transaction_repository
     ),
 ) -> GetCandlesResponse:
+    """
+    Получает список свечей в хронологическом порядке по заданному тикеру
+    """
     if interval_seconds < 1:
         raise HTTPException(status_code=422, detail="Недопустимый интервал")
+
     transaction_list = await transaction_repository.get(ticker)
+    # Фильтрация транзакций по временному диапазону
     transaction_list = [
         t
         for t in transaction_list
@@ -180,25 +197,33 @@ async def get_candles(
     current_prices: List[int] = []
     current_volume = 0
 
+    # Обработка каждой транзакции
     for transaction in transaction_list:
+        # Определение начала интервала для текущей транзакции
         timestamp = transaction.timestamp.timestamp()
 
-        if delta.total_seconds() >= 86400:
+        if delta.total_seconds() >= 86400:  # Для интервалов >= 1 дня
+            # Округление до 00:00:00 текущего дня
             bucket_start = datetime.fromtimestamp(
                 timestamp - (timestamp % 86400)
             )
-        elif delta.total_seconds() >= 3600:
+        elif delta.total_seconds() >= 3600:  # Для интервалов >= 1 часа
+            # Округление до часа
             bucket_start = datetime.fromtimestamp(
                 timestamp - (timestamp % 3600)
             )
-        elif delta.total_seconds() >= 60:
+        elif delta.total_seconds() >= 60:  # Для интервалов >= 1 минуты
+            # Округление до минуты
             bucket_start = datetime.fromtimestamp(timestamp - (timestamp % 60))
         else:
+            # Для интервалов в секундах
             bucket_start = datetime.fromtimestamp(
                 timestamp - (timestamp % delta.total_seconds())
             )
 
+        # Если начался новый интервал
         if current_bucket_start != bucket_start:
+            # Сохраняем предыдущую свечу, если есть данные
             if current_bucket_start is not None and current_prices:
                 candles.append(
                     CandleStick(
@@ -218,6 +243,7 @@ async def get_candles(
         current_prices.append(transaction.price)
         current_volume += transaction.qty
 
+    # Добавление последней свечи
     if current_prices:
         candles.append(
             CandleStick(

@@ -2,10 +2,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 
+from application.database.repository.app_config_repository import (
+    AppConfigRepository,
+)
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
+from application.models.database_models.app_config import AppConfig
 from application.models.database_models.balance import Balance
+from application.models.endpoint_models.admin.create_config import (
+    CreateConfigRequest,
+)
 from application.models.endpoint_models.admin.create_instrument import (
     CreateInstrumentRequest,
 )
@@ -29,6 +36,7 @@ from application.di.repositories import (
     get_instrument_repository,
     get_user_repository,
     get_balance_repository,
+    get_app_config_repository,
 )
 from application.models.database_models.instrument import Instrument
 from application.token_management import (
@@ -45,6 +53,9 @@ async def delete_user(
     authorization: UUID = Depends(admin_authorization),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> DeleteUserResponse:
+    """
+    Удаляет пользователя по его ID
+    """
     deleted_user = await user_repository.delete(user_id)
     if deleted_user is None:
         raise HTTPException(status_code=400, detail="Пользователь не найден")
@@ -64,6 +75,9 @@ async def create_instrument(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
+    """
+    Создаёт новый инструмент
+    """
     instrument = Instrument(
         name=new_instrument.name, ticker=new_instrument.ticker
     )
@@ -84,6 +98,9 @@ async def delete_instrument(
         get_instrument_repository
     ),
 ) -> SuccessResponse:
+    """
+    Удаляет существующий инструмент
+    """
     ticker_exists = await instrument_repository.exists_in_database(ticker)
     if not ticker_exists:
         raise HTTPException(status_code=404, detail="Тикер не найден")
@@ -102,6 +119,9 @@ async def deposit_user_balance(
     ),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> SuccessResponse:
+    """
+    Пополняет баланс пользователя
+    """
     deposit = Balance(
         user_id=deposit_request.user_id,
         ticker=deposit_request.ticker,
@@ -131,6 +151,9 @@ async def withdraw_user_balance(
     balance_repository: BalanceRepository = Depends(get_balance_repository),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> SuccessResponse:
+    """
+    Снимает инструменты с баланса пользователя
+    """
     withdraw = Balance(
         user_id=withdraw_request.user_id,
         ticker=withdraw_request.ticker,
@@ -149,23 +172,17 @@ async def withdraw_user_balance(
     return SuccessResponse()
 
 
-# @admin_router.post("/")
-# async def get_admin_role(
-#     authorization: UUID = Depends(user_authorization),
-#     user_repository: UserRepository = Depends(get_user_repository),
-# ):
-#     await user_repository.change_user_role(authorization, UserRole.admin)
-#     return SuccessResponse()
-#
-#
-# @admin_router.post("/config/create")
-# async def create_config(
-#     new_config: CreateConfigRequest,
-#     authorization: UUID = Depends(admin_authorization),
-#     config_repository: AppConfigRepository = Depends(
-#         get_app_config_repository
-#     ),
-# ) -> SuccessResponse:
-#     config = AppConfig(key=new_config.key, value=new_config.value)
-#     await config_repository.upsert(config)
-#     return SuccessResponse()
+@admin_router.post("/config/create")
+async def create_config(
+    new_config: CreateConfigRequest,
+    authorization: UUID = Depends(admin_authorization),
+    config_repository: AppConfigRepository = Depends(
+        get_app_config_repository
+    ),
+) -> SuccessResponse:
+    """
+    Создаёт новый, либо изменяет старый конфиг
+    """
+    config = AppConfig(key=new_config.key, value=new_config.value)
+    await config_repository.upsert(config)
+    return SuccessResponse()
