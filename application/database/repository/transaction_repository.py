@@ -27,12 +27,22 @@ class TransactionRepository:
             ],
         )
 
-    async def get(self, ticker: str, limit: int) -> list[Transaction]:
-        result = await self.db_session.scalars(
-            select(TransactionOrm)
-            .where(TransactionOrm.ticker == ticker)
-            .limit(limit)
-        )
+    async def get(
+        self, ticker: str, limit: int | None = None
+    ) -> list[Transaction]:
+        if not limit:
+            result = await self.db_session.scalars(
+                select(TransactionOrm)
+                .where(TransactionOrm.ticker == ticker)
+                .order_by(TransactionOrm.timestamp)
+            )
+        else:
+            result = await self.db_session.scalars(
+                select(TransactionOrm)
+                .where(TransactionOrm.ticker == ticker)
+                .order_by(TransactionOrm.timestamp)
+                .limit(limit)
+            )
         transaction_list = [
             Transaction.model_validate(row) for row in result.all()
         ]
