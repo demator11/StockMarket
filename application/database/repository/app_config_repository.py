@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert, update
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.models.database_models.app_config import AppConfig

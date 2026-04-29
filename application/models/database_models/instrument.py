@@ -1,5 +1,3 @@
-from pydantic import Field
-
 from application.models.base import ModelBase
 
 

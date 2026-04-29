@@ -1,14 +1,14 @@
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
-from datetime import datetime, timedelta, UTC
 
 from dotenv import load_dotenv
-from fastapi import Security, HTTPException, Depends
+from fastapi import Depends, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
 from jose import jwt
 
 from application.config import JWT_SECRET_KEY
-from application.di.repositories import get_user_repository
 from application.database.repository.user_repository import UserRepository
+from application.di.repositories import get_user_repository
 from application.models.database_models.user import UserRole
 
 load_dotenv()

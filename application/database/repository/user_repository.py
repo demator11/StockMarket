@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.orm_models.user import UserOrm
 from application.models.database_models.user import User, UserRole
+from application.models.orm_models.user import UserOrm
 
 
 class UserRepository:

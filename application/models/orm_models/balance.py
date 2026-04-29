@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
-from sqlalchemy import ForeignKey, CheckConstraint, UniqueConstraint
+
+from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import FetchedValue
 

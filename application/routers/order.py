@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from application.config import timestamp_utc
 from application.database.repository.app_config_repository import (
@@ -12,45 +12,45 @@ from application.database.repository.balance_repository import (
 from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
+from application.database.repository.order_repository import OrderRepository
 from application.database.repository.transaction_repository import (
     TransactionRepository,
 )
-from application.models.database_models.balance import Balance
-from application.models.database_models.order import (
-    UpdateOrder,
-    OrderStatus,
-    Order,
-    OrderDirection,
-)
-from application.models.endpoint_models.order.get_order_list import (
-    LimitOrderListResponse,
-    LimitOrderBodyListResponse,
-    MarketOrderListResponse,
-    MarketOrderBodyListResponse,
-)
-from application.order_consumer import process_order
-from application.token_management import user_authorization
-from application.database.repository.order_repository import OrderRepository
 from application.di.repositories import (
-    get_order_repository,
     get_app_config_repository,
-    get_instrument_repository,
     get_balance_repository,
+    get_instrument_repository,
+    get_order_repository,
     get_transaction_repository,
 )
-from application.models.endpoint_models.order.get_order_by_id import (
-    LimitOrderByIdResponse,
-    MarketOrderByIdResponse,
-    MarketOrderBody,
-    LimitOrderBody,
+from application.models.database_models.balance import Balance
+from application.models.database_models.order import (
+    Order,
+    OrderDirection,
+    OrderStatus,
+    UpdateOrder,
 )
 from application.models.endpoint_models.order.create_order import (
     CreateOrderRequest,
     CreateOrderResponse,
 )
+from application.models.endpoint_models.order.get_order_by_id import (
+    LimitOrderBody,
+    LimitOrderByIdResponse,
+    MarketOrderBody,
+    MarketOrderByIdResponse,
+)
+from application.models.endpoint_models.order.get_order_list import (
+    LimitOrderBodyListResponse,
+    LimitOrderListResponse,
+    MarketOrderBodyListResponse,
+    MarketOrderListResponse,
+)
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
+from application.order_consumer import process_order
+from application.token_management import user_authorization
 from logger import setup_logging
 
 order_router = APIRouter(prefix="/api/v1/order")

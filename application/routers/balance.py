@@ -1,11 +1,12 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends
 
-from application.token_management import user_authorization
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
 from application.di.repositories import get_balance_repository
+from application.token_management import user_authorization
 
 balance_router = APIRouter(prefix="/api/v1/balance")
 

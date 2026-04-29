@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from application.database.repository.app_config_repository import (
     AppConfigRepository,
@@ -8,8 +8,19 @@ from application.database.repository.app_config_repository import (
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
+from application.database.repository.instrument_repository import (
+    InstrumentRepository,
+)
+from application.database.repository.user_repository import UserRepository
+from application.di.repositories import (
+    get_app_config_repository,
+    get_balance_repository,
+    get_instrument_repository,
+    get_user_repository,
+)
 from application.models.database_models.app_config import AppConfig
 from application.models.database_models.balance import Balance
+from application.models.database_models.instrument import Instrument
 from application.models.endpoint_models.admin.create_config import (
     CreateConfigRequest,
 )
@@ -28,21 +39,9 @@ from application.models.endpoint_models.balance.withdraw_balance import (
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
-from application.database.repository.user_repository import UserRepository
-from application.database.repository.instrument_repository import (
-    InstrumentRepository,
-)
-from application.di.repositories import (
-    get_instrument_repository,
-    get_user_repository,
-    get_balance_repository,
-    get_app_config_repository,
-)
-from application.models.database_models.instrument import Instrument
 from application.token_management import (
     admin_authorization,
 )
-
 
 admin_router = APIRouter(prefix="/api/v1/admin")
 

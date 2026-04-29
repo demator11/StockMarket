@@ -1,14 +1,29 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import Dict, List
 
-from fastapi import APIRouter, HTTPException, Response, Depends
+from fastapi import APIRouter, Depends, HTTPException, Response
 
+from application.database.repository.instrument_repository import (
+    InstrumentRepository,
+)
 from application.database.repository.order_repository import OrderRepository
 from application.database.repository.transaction_repository import (
     TransactionRepository,
 )
+from application.database.repository.user_repository import UserRepository
+from application.di.repositories import (
+    get_instrument_repository,
+    get_order_repository,
+    get_transaction_repository,
+    get_user_repository,
+)
 from application.models.database_models.order import (
     OrderDirection,
+)
+from application.models.database_models.user import User
+from application.models.endpoint_models.public.create_user import (
+    CreateUserRequest,
+    CreateUserResponse,
 )
 from application.models.endpoint_models.public.get_candles import (
     CandleStick,
@@ -24,21 +39,6 @@ from application.models.endpoint_models.public.get_transaction_history import (
 from application.models.endpoint_models.public.list_instrument import (
     InstrumentListResponse,
 )
-from application.models.endpoint_models.public.create_user import (
-    CreateUserRequest,
-    CreateUserResponse,
-)
-from application.di.repositories import (
-    get_user_repository,
-    get_instrument_repository,
-    get_order_repository,
-    get_transaction_repository,
-)
-from application.database.repository.user_repository import UserRepository
-from application.database.repository.instrument_repository import (
-    InstrumentRepository,
-)
-from application.models.database_models.user import User
 from application.token_management import create_access_token
 
 public_router = APIRouter(prefix="/api/v1/public")

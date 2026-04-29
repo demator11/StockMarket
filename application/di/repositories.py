@@ -7,6 +7,13 @@ from application.database.engine import async_session_factory
 from application.database.repository.app_config_repository import (
     AppConfigRepository,
 )
+from application.database.repository.balance_repository import (
+    BalanceRepository,
+)
+from application.database.repository.instrument_repository import (
+    InstrumentRepository,
+)
+from application.database.repository.order_repository import OrderRepository
 from application.database.repository.outbox_message_repository import (
     OutboxMessageRepository,
 )
@@ -14,13 +21,6 @@ from application.database.repository.transaction_repository import (
     TransactionRepository,
 )
 from application.database.repository.user_repository import UserRepository
-from application.database.repository.instrument_repository import (
-    InstrumentRepository,
-)
-from application.database.repository.balance_repository import (
-    BalanceRepository,
-)
-from application.database.repository.order_repository import OrderRepository
 
 
 async def get_db() -> AsyncSession:
