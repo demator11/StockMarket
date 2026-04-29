@@ -4,8 +4,8 @@ import pytest
 
 from application.models.database_models.order import (
     Order,
-    OrderStatus,
     OrderDirection,
+    OrderStatus,
 )
 
 

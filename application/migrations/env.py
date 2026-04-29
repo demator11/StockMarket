@@ -1,20 +1,19 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from application.config import POSTGRESQL_URL
-from application.models.orm_models.user import UserOrm  # noqa
+from application.database.engine import Base
+from application.models.orm_models.app_config import AppConfigOrm  # noqa
 from application.models.orm_models.balance import BalanceOrm  # noqa
-from application.models.orm_models.order import OrderOrm  # noqa
 from application.models.orm_models.instrument import InstrumentOrm  # noqa
-from application.models.orm_models.transaction import TransactionOrm  # noqa
+from application.models.orm_models.order import OrderOrm  # noqa
 from application.models.orm_models.outbox_message import (  # noqa
     OutboxMessageOrm,
 )
-from application.models.orm_models.app_config import AppConfigOrm  # noqa
-from application.database.engine import Base
+from application.models.orm_models.transaction import TransactionOrm  # noqa
+from application.models.orm_models.user import UserOrm  # noqa
 
 config = context.config
 

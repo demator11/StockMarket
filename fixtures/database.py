@@ -1,5 +1,5 @@
 import os
-from typing import Generator, AsyncGenerator
+from typing import AsyncGenerator, Generator
 
 import asyncpg
 import pytest
@@ -9,14 +9,13 @@ from alembic.config import Config
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from application.config import (
-    POSTGRESQL_PASS,
     POSTGRESQL_HOST,
-    POSTGRESQL_USER,
-    POSTGRESQL_PORT,
     POSTGRESQL_NAME,
+    POSTGRESQL_PASS,
+    POSTGRESQL_PORT,
+    POSTGRESQL_USER,
 )
 from application.database.engine import async_engine, async_session_factory
-
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

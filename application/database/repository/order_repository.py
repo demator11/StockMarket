@@ -1,15 +1,15 @@
 from uuid import UUID
 
-from sqlalchemy import insert, select, update, or_, func
+from sqlalchemy import func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.orm_models.order import OrderOrm
 from application.models.database_models.order import (
     Order,
-    UpdateOrder,
     OrderDirection,
     OrderStatus,
+    UpdateOrder,
 )
+from application.models.orm_models.order import OrderOrm
 
 
 class OrderRepository:

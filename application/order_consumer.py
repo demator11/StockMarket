@@ -9,19 +9,19 @@ from application.database.repository.app_config_repository import (
 from application.database.repository.balance_repository import (
     BalanceRepository,
 )
-from application.models.database_models.balance import Balance
-from application.models.orm_models.user import UserOrm  # noqa
 from application.database.repository.order_repository import OrderRepository
 from application.database.repository.transaction_repository import (
     TransactionRepository,
 )
+from application.models.database_models.balance import Balance
 from application.models.database_models.order import (
     Order,
     OrderDirection,
-    UpdateOrder,
     OrderStatus,
+    UpdateOrder,
 )
 from application.models.database_models.transaction import Transaction
+from application.models.orm_models.user import UserOrm  # noqa
 from logger import setup_logging
 
 logger = setup_logging(__name__)

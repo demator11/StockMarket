@@ -9,7 +9,6 @@ from application.routers.balance import balance_router
 from application.routers.order import order_router
 from application.routers.public import public_router
 
-
 # @pytest.fixture
 # def app():
 #     app = FastAPI()

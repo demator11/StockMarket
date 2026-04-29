@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select, insert, update, func
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.models.orm_models.balance import BalanceOrm
 from application.models.database_models.balance import Balance
+from application.models.orm_models.balance import BalanceOrm
 
 
 class BalanceRepository:

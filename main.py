@@ -1,11 +1,10 @@
 import uvicorn
 from fastapi import FastAPI
 
-from application.routers.public import public_router
+from application.routers.admin import admin_router
 from application.routers.balance import balance_router
 from application.routers.order import order_router
-from application.routers.admin import admin_router
-
+from application.routers.public import public_router
 
 app = FastAPI()
 app.include_router(public_router, tags=["public"])
