@@ -1,3 +1,28 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stock-market-toropov"
+version = "0.1.0"
+description = "Stock market trading platform"
+requires-python = ">=3.13"
+dependencies = [
+    "uvicorn==0.34.0",
+    "fastapi==0.115.11",
+    "pydantic==2.10.6",
+    "SQLAlchemy==2.0.38",
+    "python-dotenv==1.0.1",
+    "alembic==1.15.1",
+    "pytest~=8.3.5",
+    "asyncpg~=0.30.0",
+    "aio-pika==9.5.5",
+    "python-jose==3.4.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["application*"]
+
 [tool.ruff]
 line-length = 79
 target-version = "py313"
@@ -9,3 +34,17 @@ ignore = ["B008"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+env_files = [".test.env"]
+
+[tool.mypy]
+python_version = "3.13"
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["venv"]
+
+[[tool.mypy.overrides]]
+module = "*.tests.*"
+ignore_errors = true
