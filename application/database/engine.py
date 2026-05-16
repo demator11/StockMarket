@@ -6,6 +6,7 @@ from application.config import POSTGRESQL_ECHO, POSTGRESQL_URL
 async_engine = create_async_engine(
     url=POSTGRESQL_URL,
     echo=POSTGRESQL_ECHO,
+    pool_pre_ping=True,
 )
 
 

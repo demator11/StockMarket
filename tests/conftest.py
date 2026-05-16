@@ -4,7 +4,7 @@ from pathlib import Path
 def collect_fixtures() -> tuple:
 
     fixtures = []
-    project_root = Path(__file__).parent
+    project_root = Path(__file__).parent.parent
     fixtures_dir = project_root / "fixtures"
 
     for path in fixtures_dir.rglob("*.py"):

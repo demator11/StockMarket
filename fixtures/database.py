@@ -74,7 +74,4 @@ def migration(engine: AsyncEngine) -> Generator[None, None, None]:
 @pytest_asyncio.fixture(scope="module")
 async def db_session(migration) -> AsyncGenerator[AsyncSession, None]:
     async with async_session_factory() as session:
-        async with session.begin():
-            print("Отдал сессию")
-            yield session
-            print("Закрыл сессию")
+        yield session

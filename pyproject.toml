@@ -38,6 +38,7 @@ indent-style = "space"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 env_files = [".test.env"]
+asyncio_default_fixture_loop_scope = "session"
 
 [tool.mypy]
 python_version = "3.13"
