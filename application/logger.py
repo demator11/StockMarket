@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 
 def setup_logging(name: str, level: int = logging.INFO):
@@ -13,7 +14,11 @@ def setup_logging(name: str, level: int = logging.INFO):
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    file_handler = logging.FileHandler("py_log.log")
+    log_dir = Path(__file__).resolve().parent.parent / "logs"
+    log_dir.mkdir(exist_ok=True)
+    file_path = log_dir / "py_log.log"
+
+    file_handler = logging.FileHandler(file_path)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 

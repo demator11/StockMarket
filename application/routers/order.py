@@ -23,6 +23,7 @@ from application.di.repositories import (
     get_order_repository,
     get_transaction_repository,
 )
+from application.logger import setup_logging
 from application.models.database_models.balance import Balance
 from application.models.database_models.order import (
     Order,
@@ -51,7 +52,6 @@ from application.models.endpoint_models.success_response import (
 )
 from application.order_consumer import process_order
 from application.token_management import user_authorization
-from logger import setup_logging
 
 order_router = APIRouter(prefix="/api/v1/order")
 logger = setup_logging(__name__)
