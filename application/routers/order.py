@@ -13,15 +13,15 @@ from application.database.repository.instrument_repository import (
     InstrumentRepository,
 )
 from application.database.repository.order_repository import OrderRepository
-from application.database.repository.transaction_repository import (
-    TransactionRepository,
+from application.database.repository.outbox_message_repository import (
+    OutboxMessageRepository,
 )
 from application.di.repositories import (
     get_app_config_repository,
     get_balance_repository,
     get_instrument_repository,
     get_order_repository,
-    get_transaction_repository,
+    get_outbox_message_repository,
 )
 from application.logger import setup_logging
 from application.models.database_models.balance import Balance
@@ -31,6 +31,7 @@ from application.models.database_models.order import (
     OrderStatus,
     UpdateOrder,
 )
+from application.models.database_models.outbox_message import OutboxMessage
 from application.models.endpoint_models.order.create_order import (
     CreateOrderRequest,
     CreateOrderResponse,
@@ -50,7 +51,6 @@ from application.models.endpoint_models.order.get_order_list import (
 from application.models.endpoint_models.success_response import (
     SuccessResponse,
 )
-from application.order_consumer import process_order
 from application.token_management import user_authorization
 
 order_router = APIRouter(prefix="/api/v1/order")
@@ -67,10 +67,9 @@ async def create_order(
     instrument_repository: InstrumentRepository = Depends(
         get_instrument_repository
     ),
-    balance_repository: BalanceRepository = Depends(get_balance_repository),
     order_repository: OrderRepository = Depends(get_order_repository),
-    transaction_repository: TransactionRepository = Depends(
-        get_transaction_repository
+    outbox_message_repository: OutboxMessageRepository = Depends(
+        get_outbox_message_repository
     ),
 ) -> CreateOrderResponse:
     """
@@ -101,18 +100,14 @@ async def create_order(
             status_code=400, detail="Данного тикера не существует"
         )
 
-    result = await process_order(
-        current_order=order_body,
-        balance_repository=balance_repository,
-        order_repository=order_repository,
-        transaction_repository=transaction_repository,
-        app_config_repository=app_config_repository,
-    )
+    await order_repository.create(order_body)
 
-    if result.status_code != 200:
-        raise HTTPException(
-            status_code=result.status_code, detail=result.detail
+    await outbox_message_repository.create(
+        OutboxMessage(
+            id=order_body.id,
+            payload=order_body.model_dump_json(),
         )
+    )
 
     return CreateOrderResponse(order_id=order_body.id)
 
